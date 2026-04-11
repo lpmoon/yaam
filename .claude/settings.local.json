@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -H \"User-Agent: Mozilla/5.0\" \"https://www.shishihuilv.com/USD-CNY-1.html\")",
+      "Bash(curl -s -H \"User-Agent: Mozilla/5.0\" \"https://www.shishihuilv.com/HKD-CNY-1.html\")",
+      "Bash(./gradlew compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :app:compileDebugKotlin --stacktrace)",
+      "Bash(./gradlew :app:build)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "mcp__ide__getDiagnostics"
+    ]
+  }
+}
