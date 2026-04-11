@@ -1,4 +1,4 @@
-package com.lpmoon.asset.ui
+package com.lpmoon.asset.ui.asset
 
 import android.Manifest
 import android.content.pm.PackageManager

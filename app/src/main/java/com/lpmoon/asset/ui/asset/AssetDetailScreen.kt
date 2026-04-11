@@ -1,9 +1,12 @@
-package com.lpmoon.asset.ui
+package com.lpmoon.asset.ui.asset
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import android.widget.Toast
+import android.content.Context
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -37,6 +41,7 @@ fun AssetDetailScreen(
     onDelete: () -> Unit,
     histories: List<AssetHistory> = emptyList()
 ) {
+    val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val currencyType = CurrencyType.fromString(asset.currency)
 
@@ -171,13 +176,39 @@ fun AssetDetailScreen(
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
 
-                    DetailItem(
-                        label = "人民币等值",
-                        value = "${DecimalFormat("#,##0.00").format(getValueInCny(asset))}",
-                        valueStyle = MaterialTheme.typography.headlineSmall,
-                        valueColor = MaterialTheme.colorScheme.primary,
-                        valueFontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "人民币等值",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        val cnyValue = "${DecimalFormat("#,##0.00").format(getValueInCny(asset))}"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = cnyValue,
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            val clipboardManager = LocalClipboardManager.current
+                            IconButton(
+                                onClick = {
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(cnyValue))
+                                    Toast.makeText(context, "已复制: $cnyValue", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "复制", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
 
                     // 操作记录
                     Divider(
