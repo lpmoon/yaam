@@ -8,7 +8,9 @@
       "Bash(./gradlew :app:compileDebugKotlin --stacktrace)",
       "Bash(./gradlew :app:build)",
       "Bash(./gradlew :app:assembleDebug)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Read(//d D:/workspace/**)",
+      "Bash(./gradlew.bat :app:compileDebugKotlin --stacktrace)"
     ]
   }
 }

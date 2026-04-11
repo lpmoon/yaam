@@ -1,4 +1,4 @@
-package com.lpmoon.asset.ui
+package com.lpmoon.asset.ui.asset
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -6,37 +6,32 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.foundation.Canvas
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.border
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import com.lpmoon.asset.data.Asset
 import com.lpmoon.asset.data.AssetHistory
 import com.lpmoon.asset.data.AssetType
 import com.lpmoon.asset.data.CurrencyType
 import com.lpmoon.asset.data.ExchangeRate
 import com.lpmoon.asset.data.TimeDimension
-import com.lpmoon.asset.ui.QrCodeDialog
+import com.lpmoon.asset.ui.asset.QrCodeDialog
 import com.lpmoon.asset.sync.AssetSyncClient
 import java.text.DecimalFormat
 
@@ -63,7 +58,8 @@ fun AssetListScreen(
     onImportFromJson: (String) -> Boolean = { false },
     onSyncSuccess: () -> Unit = {},
     generateSyncQrContent: () -> String? = { null },
-    stopSyncServer: () -> Unit = {}
+    stopSyncServer: () -> Unit = {},
+    onNavigateToTaxCalculator: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingAsset by remember { mutableStateOf<Asset?>(null) }
@@ -173,12 +169,31 @@ fun AssetListScreen(
                     )
                 )
             },
+            bottomBar = {
+                NavigationBar(
+                    tonalElevation = 4.dp,
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    NavigationBarItem(
+                        selected = true,
+                        onClick = {},
+                        icon = { Icon(Icons.Default.MonetizationOn, contentDescription = null) },
+                        label = { Text("个人资产") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateToTaxCalculator,
+                        icon = { Icon(Icons.Default.Calculate, contentDescription = null) },
+                        label = { Text("税率计算") }
+                    )
+                }
+            }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
             ) {
 
                 Surface(
@@ -209,6 +224,20 @@ fun AssetListScreen(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.weight(1f)
                             )
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            val clipboardManager = LocalClipboardManager.current
+                            val totalAssetsText = "¥${DecimalFormat("#,##0.00").format(totalAssets)}"
+                            IconButton(
+                                onClick = {
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(totalAssetsText))
+                                    Toast.makeText(context, "已复制: $totalAssetsText", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "复制总资产", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
 
                             Spacer(modifier = Modifier.width(2.dp))
 
@@ -448,14 +477,3 @@ fun AssetListScreen(
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-

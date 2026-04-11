@@ -1,4 +1,4 @@
-package com.lpmoon.asset.ui
+package com.lpmoon.asset.ui.asset
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
