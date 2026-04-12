@@ -10,6 +10,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lpmoon.asset.ui.asset.AssetListScreen
 import com.lpmoon.asset.ui.asset.AssetRankingScreen
+import com.lpmoon.asset.ui.config.ConfigurationScreen
+import com.lpmoon.asset.ui.config.TaxSettingsScreen
+import com.lpmoon.asset.ui.config.ThemeSettingsScreen
 import com.lpmoon.asset.ui.tax.TaxCalculatorScreen
 import com.lpmoon.asset.ui.theme.资产管理Theme
 import com.lpmoon.asset.viewmodel.AssetViewModel
@@ -18,6 +21,9 @@ sealed class Screen(val title: String) {
     data object AssetList : Screen("个人资产")
     data object TaxCalculator : Screen("税率计算器")
     data object Ranking : Screen("资产排行榜")
+    data object Configuration : Screen("配置")
+    data object ThemeSettings : Screen("主题设置")
+    data object TaxSettings : Screen("税率设置")
 }
 
 class MainActivity : AppCompatActivity() {
@@ -61,12 +67,14 @@ class MainActivity : AppCompatActivity() {
                             generateSyncQrContent = viewModel::generateSyncQrContent,
                             stopSyncServer = viewModel::stopSyncServer,
                             onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator },
-                            onNavigateToRanking = { currentScreen = Screen.Ranking }
+                            onNavigateToRanking = { currentScreen = Screen.Ranking },
+                            onNavigateToConfiguration = { currentScreen = Screen.Configuration }
                         )
                     }
                     is Screen.TaxCalculator -> {
                         TaxCalculatorScreen(
-                            onBack = { currentScreen = Screen.AssetList }
+                            onBack = { currentScreen = Screen.AssetList },
+                            onNavigateToConfiguration = { currentScreen = Screen.Configuration }
                         )
                     }
                     is Screen.Ranking -> {
@@ -74,7 +82,27 @@ class MainActivity : AppCompatActivity() {
                             assets = viewModel.assets.collectAsState().value,
                             totalAssets = viewModel.totalAssets.collectAsState().value,
                             getAssetValueInCny = viewModel::getAssetValueInCny,
-                            onBack = { currentScreen = Screen.AssetList }
+                            onBack = { currentScreen = Screen.AssetList },
+                            onNavigateToConfiguration = { currentScreen = Screen.Configuration }
+                        )
+                    }
+                    is Screen.Configuration -> {
+                        ConfigurationScreen(
+            onBack = { currentScreen = Screen.AssetList },
+                            onNavigateToAssetList = { currentScreen = Screen.AssetList },
+                            onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator },
+                            onNavigateToThemeSettings = { currentScreen = Screen.ThemeSettings },
+                            onNavigateToTaxSettings = { currentScreen = Screen.TaxSettings }
+                        )
+                    }
+                    is Screen.ThemeSettings -> {
+                        ThemeSettingsScreen(
+            onBack = { currentScreen = Screen.Configuration }
+                        )
+                    }
+                    is Screen.TaxSettings -> {
+                        TaxSettingsScreen(
+            onBack = { currentScreen = Screen.Configuration }
                         )
                     }
                 }

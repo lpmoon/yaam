@@ -11,7 +11,11 @@
       "mcp__ide__getDiagnostics",
       "Read(//d D:/workspace/**)",
       "Bash(./gradlew.bat :app:compileDebugKotlin --stacktrace)",
-      "Bash(./gradlew :app:compileDebugKotlin --no-daemon --stacktrace)"
+      "Bash(./gradlew :app:compileDebugKotlin --no-daemon --stacktrace)",
+      "Bash(./gradlew compileDebugKotlin)",
+      "Bash(cd /d D:\\\\workspace\\\\android)",
+      "Bash(./gradlew assembleDebug --quiet)",
+      "Bash(./gradlew installDebug --quiet)"
     ]
   }
 }

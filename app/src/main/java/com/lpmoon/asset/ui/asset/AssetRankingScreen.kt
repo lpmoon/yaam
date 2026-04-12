@@ -26,7 +26,8 @@ fun AssetRankingScreen(
     assets: List<Asset>,
     totalAssets: Double,
     getAssetValueInCny: (Asset) -> Double,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToConfiguration: () -> Unit = {}
 ) {
     // 计算每个资产的价值和百分比，并按价值从高到低排序
     val rankedAssets = remember(assets, totalAssets) {
@@ -76,6 +77,12 @@ fun AssetRankingScreen(
                     onClick = {},
                     icon = { Icon(Icons.Default.Calculate, contentDescription = null) },
                     label = { Text("税率计算") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateToConfiguration,
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("配置") }
                 )
             }
         }

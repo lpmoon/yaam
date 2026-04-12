@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lpmoon.asset.data.*
+import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,22 +24,34 @@ fun IncomeTaxCalculatorScreen(
     onBack: () -> Unit,
     isEmbedded: Boolean = false
 ) {
+    val viewModel: TaxSettingsViewModel = viewModel()
+    val taxSettings by viewModel.taxSettings.collectAsState()
+
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
     var calculationMode by remember { mutableStateOf(0) } // 0: 月薪, 1: 年薪
-    var socialSecurityRate by remember { mutableStateOf("0.08") } // 养老保险个人比例
-    var housingFundRate by remember { mutableStateOf("0.12") } // 公积金个人比例
-    var medicalInsuranceRate by remember { mutableStateOf("0.02") } // 医疗保险个人比例
-    var unemploymentInsuranceRate by remember { mutableStateOf("0.005") } // 失业保险个人比例
-    var specialDeduction by remember { mutableStateOf("0") } // 专项附加扣除
+    var socialSecurityRate by remember { mutableStateOf(viewModel.formatSocialSecurityPercent()) } // 养老保险个人比例
+    var housingFundRate by remember { mutableStateOf(viewModel.formatHousingFundPercent()) } // 公积金个人比例
+    var medicalInsuranceRate by remember { mutableStateOf(viewModel.formatMedicalInsurancePercent()) } // 医疗保险个人比例
+    var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) } // 失业保险个人比例
+    var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
+
+    // 当税率设置变化时，更新本地状态
+    LaunchedEffect(taxSettings) {
+        socialSecurityRate = viewModel.formatSocialSecurityPercent()
+        housingFundRate = viewModel.formatHousingFundPercent()
+        medicalInsuranceRate = viewModel.formatMedicalInsurancePercent()
+        unemploymentInsuranceRate = viewModel.formatUnemploymentInsurancePercent()
+        specialDeduction = viewModel.formatSpecialDeduction()
+    }
 
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
     val annualSalaryValue = annualSalary.toDoubleOrNull() ?: 0.0
-    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 0.08
-    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 0.12
-    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 0.02
-    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.005
+    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 8.0
+    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 12.0
+    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 2.0
+    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.5
     val specialDeductionValue = specialDeduction.toDoubleOrNull() ?: 0.0
 
     // 根据计算模式确定月薪
@@ -49,10 +64,10 @@ fun IncomeTaxCalculatorScreen(
     val result = if (baseMonthlySalary > 0) {
         calculateIncomeTax(
             monthlySalary = baseMonthlySalary,
-            socialSecurityRate = socialSecurityRateValue,
-            housingFundRate = housingFundRateValue,
-            medicalInsuranceRate = medicalInsuranceRateValue,
-            unemploymentInsuranceRate = unemploymentInsuranceRateValue,
+            socialSecurityRate = socialSecurityRateValue / 100.0,
+            housingFundRate = housingFundRateValue / 100.0,
+            medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+            unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
             specialDeduction = specialDeductionValue
         )
     } else {
@@ -324,12 +339,12 @@ fun IncomeTaxCalculatorContent(
                     value = socialSecurityRate,
                     onValueChange = onSocialSecurityRateChange,
                     label = { Text("养老保险个人比例") },
-                    placeholder = { Text("例如：0.08 表示 8%") },
+                    placeholder = { Text("例如：8 表示 8%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = socialSecurityRate.isNotEmpty() && (socialSecurityRateValue < 0 || socialSecurityRateValue > 1)
+                    isError = socialSecurityRate.isNotEmpty() && (socialSecurityRateValue < 0 || socialSecurityRateValue > 100)
                 )
 
                 // 公积金比例
@@ -337,12 +352,12 @@ fun IncomeTaxCalculatorContent(
                     value = housingFundRate,
                     onValueChange = onHousingFundRateChange,
                     label = { Text("公积金个人比例") },
-                    placeholder = { Text("例如：0.12 表示 12%") },
+                    placeholder = { Text("例如：12 表示 12%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = housingFundRate.isNotEmpty() && (housingFundRateValue < 0 || housingFundRateValue > 1)
+                    isError = housingFundRate.isNotEmpty() && (housingFundRateValue < 0 || housingFundRateValue > 100)
                 )
 
                 // 医疗保险比例
@@ -350,12 +365,12 @@ fun IncomeTaxCalculatorContent(
                     value = medicalInsuranceRate,
                     onValueChange = onMedicalInsuranceRateChange,
                     label = { Text("医疗保险个人比例") },
-                    placeholder = { Text("例如：0.02 表示 2%") },
+                    placeholder = { Text("例如：2 表示 2%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = medicalInsuranceRate.isNotEmpty() && (medicalInsuranceRateValue < 0 || medicalInsuranceRateValue > 1)
+                    isError = medicalInsuranceRate.isNotEmpty() && (medicalInsuranceRateValue < 0 || medicalInsuranceRateValue > 100)
                 )
 
                 // 失业保险比例
@@ -363,12 +378,12 @@ fun IncomeTaxCalculatorContent(
                     value = unemploymentInsuranceRate,
                     onValueChange = onUnemploymentInsuranceRateChange,
                     label = { Text("失业保险个人比例") },
-                    placeholder = { Text("例如：0.005 表示 0.5%") },
+                    placeholder = { Text("例如：0.5 表示 0.5%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = unemploymentInsuranceRate.isNotEmpty() && (unemploymentInsuranceRateValue < 0 || unemploymentInsuranceRateValue > 1)
+                    isError = unemploymentInsuranceRate.isNotEmpty() && (unemploymentInsuranceRateValue < 0 || unemploymentInsuranceRateValue > 100)
                 )
             }
         }
@@ -418,10 +433,10 @@ fun IncomeTaxCalculatorContent(
                 }
             },
             enabled = baseMonthlySalary > 0 &&
-                    socialSecurityRateValue >= 0 && socialSecurityRateValue <= 1 &&
-                    housingFundRateValue >= 0 && housingFundRateValue <= 1 &&
-                    medicalInsuranceRateValue >= 0 && medicalInsuranceRateValue <= 1 &&
-                    unemploymentInsuranceRateValue >= 0 && unemploymentInsuranceRateValue <= 1 &&
+                    socialSecurityRateValue >= 0 && socialSecurityRateValue <= 100 &&
+                    housingFundRateValue >= 0 && housingFundRateValue <= 100 &&
+                    medicalInsuranceRateValue >= 0 && medicalInsuranceRateValue <= 100 &&
+                    unemploymentInsuranceRateValue >= 0 && unemploymentInsuranceRateValue <= 100 &&
                     specialDeductionValue >= 0,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -586,90 +601,4 @@ private fun ResultItem(
             fontWeight = valueFontWeight
         )
     }
-}
-
-/**
- * 普通收入税率计算结果
- */
-data class IncomeTaxResult(
-    val monthlySalary: Double,           // 月薪
-    val socialSecurity: Double,          // 养老保险
-    val housingFund: Double,             // 公积金
-    val medicalInsurance: Double,        // 医疗保险
-    val unemploymentInsurance: Double,   // 失业保险
-    val totalInsurance: Double,          // 五险一金合计
-    val specialDeduction: Double,        // 专项附加扣除
-    val taxableIncome: Double,           // 应纳税所得额
-    val taxRate: Double,                 // 税率
-    val quickDeduction: Double,          // 速算扣除数
-    val incomeTax: Double,               // 应缴个税
-    val afterTaxMonthly: Double,         // 税后月收入
-    val afterTaxAnnual: Double,          // 税后年收入
-    val actualTaxRate: Double            // 实际税率：个税/总收入
-)
-
-/**
- * 计算普通收入个人所得税
- */
-fun calculateIncomeTax(
-    monthlySalary: Double,
-    socialSecurityRate: Double = 0.08,
-    housingFundRate: Double = 0.12,
-    medicalInsuranceRate: Double = 0.02,
-    unemploymentInsuranceRate: Double = 0.005,
-    specialDeduction: Double = 0.0
-): IncomeTaxResult {
-    // 五险一金计算（基于月薪）
-    val socialSecurity = monthlySalary * socialSecurityRate
-    val housingFund = monthlySalary * housingFundRate
-    val medicalInsurance = monthlySalary * medicalInsuranceRate
-    val unemploymentInsurance = monthlySalary * unemploymentInsuranceRate
-    val totalInsurance = socialSecurity + housingFund + medicalInsurance + unemploymentInsurance
-
-    // 个税起征点
-    val taxThreshold = 5000.0
-
-    // 应纳税所得额 = 月薪 - 五险一金 - 起征点 - 专项附加扣除
-    val taxableIncome = maxOf(0.0, monthlySalary - totalInsurance - taxThreshold - specialDeduction)
-
-    // 根据应纳税所得额确定税率（月度税率表）
-    val (taxRate, quickDeduction) = when {
-        taxableIncome <= 0 -> Pair(0.0, 0.0)
-        taxableIncome <= 3000 -> Pair(0.03, 0.0)
-        taxableIncome <= 12000 -> Pair(0.10, 210.0)
-        taxableIncome <= 25000 -> Pair(0.20, 1410.0)
-        taxableIncome <= 35000 -> Pair(0.25, 2660.0)
-        taxableIncome <= 55000 -> Pair(0.30, 4410.0)
-        taxableIncome <= 80000 -> Pair(0.35, 7160.0)
-        else -> Pair(0.45, 15160.0)
-    }
-
-    // 计算个税
-    val incomeTax = taxableIncome * taxRate - quickDeduction
-
-    // 税后月收入
-    val afterTaxMonthly = monthlySalary - totalInsurance - incomeTax
-
-    // 税后年收入
-    val afterTaxAnnual = afterTaxMonthly * 12
-
-    // 实际税率 = 个税 / 月薪
-    val actualTaxRate = if (monthlySalary > 0) incomeTax / monthlySalary else 0.0
-
-    return IncomeTaxResult(
-        monthlySalary = monthlySalary,
-        socialSecurity = socialSecurity,
-        housingFund = housingFund,
-        medicalInsurance = medicalInsurance,
-        unemploymentInsurance = unemploymentInsurance,
-        totalInsurance = totalInsurance,
-        specialDeduction = specialDeduction,
-        taxableIncome = taxableIncome,
-        taxRate = taxRate,
-        quickDeduction = quickDeduction,
-        incomeTax = maxOf(0.0, incomeTax),
-        afterTaxMonthly = afterTaxMonthly,
-        afterTaxAnnual = afterTaxAnnual,
-        actualTaxRate = actualTaxRate
-    )
 }

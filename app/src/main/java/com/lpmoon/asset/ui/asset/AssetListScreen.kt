@@ -63,7 +63,8 @@ fun AssetListScreen(
     generateSyncQrContent: () -> String? = { null },
     stopSyncServer: () -> Unit = {},
     onNavigateToTaxCalculator: () -> Unit = {},
-    onNavigateToRanking: () -> Unit = {}
+    onNavigateToRanking: () -> Unit = {},
+    onNavigateToConfiguration: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingAsset by remember { mutableStateOf<Asset?>(null) }
@@ -191,6 +192,12 @@ fun AssetListScreen(
                         onClick = onNavigateToTaxCalculator,
                         icon = { Icon(Icons.Default.Calculate, contentDescription = null) },
                         label = { Text("税率计算") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateToConfiguration,
+                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                        label = { Text("配置") }
                     )
                 }
             }
