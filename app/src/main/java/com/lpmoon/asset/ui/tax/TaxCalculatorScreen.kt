@@ -11,21 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.ui.config.TaxSettingsManager
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.text.DecimalFormat
-
-// 格式化数字为字符串，去除不必要的精度
-private fun formatNumber(value: Double): String {
-    val decimal = BigDecimal.valueOf(value).setScale(10, RoundingMode.HALF_UP)
-        .stripTrailingZeros()
-    return if (decimal.scale() < 0) {
-        decimal.toBigInteger().toString()
-    } else {
-        decimal.toString()
-    }
-}
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lpmoon.asset.data.*
+import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,7 +134,7 @@ private fun TaxRateCalculatorContentWrapper() {
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result = calculateTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    val result = calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
 
     TaxRateCalculatorContent(
         bonusAmount = bonusAmount,
@@ -166,25 +154,26 @@ private fun TaxRateCalculatorContentWrapper() {
 
 @Composable
 private fun IncomeTaxCalculatorContentWrapper() {
-    val taxSettings by TaxSettingsManager.taxSettings.collectAsState()
+    val viewModel: TaxSettingsViewModel = viewModel()
+    val taxSettings by viewModel.taxSettings.collectAsState()
 
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
     var calculationMode by remember { mutableStateOf(0) } // 0: 月薪, 1: 年薪
-    var socialSecurityRate by remember { mutableStateOf(formatNumber(taxSettings.socialSecurityRate * 100)) } // 养老保险个人比例
-    var housingFundRate by remember { mutableStateOf(formatNumber(taxSettings.housingFundRate * 100)) } // 公积金个人比例
-    var medicalInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.medicalInsuranceRate * 100)) } // 医疗保险个人比例
-    var unemploymentInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.unemploymentInsuranceRate * 100)) } // 失业保险个人比例
-    var specialDeduction by remember { mutableStateOf(formatNumber(taxSettings.specialDeduction)) } // 专项附加扣除
+    var socialSecurityRate by remember { mutableStateOf(viewModel.formatSocialSecurityPercent()) } // 养老保险个人比例
+    var housingFundRate by remember { mutableStateOf(viewModel.formatHousingFundPercent()) } // 公积金个人比例
+    var medicalInsuranceRate by remember { mutableStateOf(viewModel.formatMedicalInsurancePercent()) } // 医疗保险个人比例
+    var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) } // 失业保险个人比例
+    var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
 
     // 当税率设置变化时，更新本地状态
     LaunchedEffect(taxSettings) {
-        socialSecurityRate = formatNumber(taxSettings.socialSecurityRate * 100)
-        housingFundRate = formatNumber(taxSettings.housingFundRate * 100)
-        medicalInsuranceRate = formatNumber(taxSettings.medicalInsuranceRate * 100)
-        unemploymentInsuranceRate = formatNumber(taxSettings.unemploymentInsuranceRate * 100)
-        specialDeduction = formatNumber(taxSettings.specialDeduction)
+        socialSecurityRate = viewModel.formatSocialSecurityPercent()
+        housingFundRate = viewModel.formatHousingFundPercent()
+        medicalInsuranceRate = viewModel.formatMedicalInsurancePercent()
+        unemploymentInsuranceRate = viewModel.formatUnemploymentInsurancePercent()
+        specialDeduction = viewModel.formatSpecialDeduction()
     }
 
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0

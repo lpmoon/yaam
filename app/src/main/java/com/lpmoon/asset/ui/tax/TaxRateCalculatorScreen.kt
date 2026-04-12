@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.lpmoon.asset.data.*
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +30,7 @@ fun TaxRateCalculatorScreen(
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result = calculateTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    val result = calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
 
     if (isEmbedded) {
         // 在嵌入模式下，只显示内容部分
@@ -107,7 +108,7 @@ fun TaxRateCalculatorContent(
     showResult: Boolean,
     bonusValue: Double,
     monthlySalaryValue: Double,
-    result: TaxResult,
+    result: BonusTaxResult,
     onBonusAmountChange: (String) -> Unit,
     onMonthlySalaryChange: (String) -> Unit,
     onIncludeMonthlySalaryChange: (Boolean) -> Unit,
@@ -137,13 +138,13 @@ fun TaxRateCalculatorContent(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "根据中国个人所得税法，年终奖采用单独计税方式：年终奖除以12个月确定税率，当月工资低于5000元时，可从年终奖中扣除差额。",
+                    text = "计算年终奖个人所得税。如果当月工资低于5000元起征点，年终奖计税基数会相应调整。",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
 
-        // 输入卡片
+        // 年终奖输入
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -151,14 +152,19 @@ fun TaxRateCalculatorContent(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 年终奖金额
+                Text(
+                    text = "年终奖金额",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
                 OutlinedTextField(
                     value = bonusAmount,
                     onValueChange = onBonusAmountChange,
-                    label = { Text("年终奖金额（元）") },
+                    label = { Text("年终奖（元）") },
                     placeholder = { Text("请输入年终奖金额") },
                     leadingIcon = {
-                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null)
+                        Icon(Icons.Default.AttachMoney, contentDescription = null)
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
@@ -172,61 +178,82 @@ fun TaxRateCalculatorContent(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
+            }
+        }
 
-                // 当月工资（可选）
-                OutlinedTextField(
-                    value = monthlySalary,
-                    onValueChange = onMonthlySalaryChange,
-                    label = { Text("当月工资（元）") },
-                    placeholder = { Text("请输入当月工资，不包含年终奖") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Payments, contentDescription = null)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = includeMonthlySalary,
-                    isError = includeMonthlySalary && monthlySalary.isNotEmpty() && monthlySalaryValue < 0
-                )
-                if (includeMonthlySalary && monthlySalary.isNotEmpty() && monthlySalaryValue < 0) {
-                    Text(
-                        text = "请输入有效的金额",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                // 是否包含当月工资
+        // 当月工资选项
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "当月工资",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "如果当月工资低于5000元，会调整年终奖计税基数",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Switch(
                         checked = includeMonthlySalary,
-                        onCheckedChange = {
-                            onIncludeMonthlySalaryChange(it)
-                            if (!it) onMonthlySalaryChange("")
-                        }
+                        onCheckedChange = onIncludeMonthlySalaryChange
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("将当月工资并入计税")
                 }
 
-                // 计算按钮
-                Button(
-                    onClick = {
-                        onShowResultChange(true)
-                    },
-                    enabled = bonusAmount.isNotEmpty() && bonusValue > 0 &&
-                            (!includeMonthlySalary || (monthlySalary.isNotEmpty() && monthlySalaryValue >= 0)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("计算税费")
+                if (includeMonthlySalary) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = monthlySalary,
+                        onValueChange = onMonthlySalaryChange,
+                        label = { Text("当月工资（元）") },
+                        placeholder = { Text("请输入当月工资") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Payments, contentDescription = null)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = monthlySalary.isNotEmpty() && monthlySalaryValue < 0
+                    )
+                    if (monthlySalary.isNotEmpty() && monthlySalaryValue < 0) {
+                        Text(
+                            text = "请输入有效的金额",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
 
+        // 计算按钮
+        Button(
+            onClick = {
+                if (bonusValue > 0) {
+                    onShowResultChange(true)
+                }
+            },
+            enabled = bonusValue > 0 && (!includeMonthlySalary || monthlySalaryValue >= 0),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("计算税费")
+        }
+
         // 结果卡片
-        if (showResult && bonusValue > 0) {
+        if (showResult) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -245,7 +272,7 @@ fun TaxRateCalculatorContent(
                     )
 
                     ResultItem(
-                        label = "年终奖金额",
+                        label = "年终奖",
                         value = "¥${DecimalFormat("#,##0.00").format(result.bonus)}"
                     )
 
@@ -254,24 +281,31 @@ fun TaxRateCalculatorContent(
                             label = "当月工资",
                             value = "¥${DecimalFormat("#,##0.00").format(result.monthlySalary)}"
                         )
-                        ResultItem(
-                            label = "合计收入",
-                            value = "¥${DecimalFormat("#,##0.00").format(result.total)}"
-                        )
                     }
 
                     Divider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Text(
+                        text = "税费计算",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    ResultItem(
+                        label = "合计收入",
+                        value = "¥${DecimalFormat("#,##0.00").format(result.total)}"
+                    )
+
+                    ResultItem(
+                        label = "应纳税额",
+                        value = "¥${DecimalFormat("#,##0.00").format(result.taxable)}"
+                    )
 
                     ResultItem(
                         label = "适用税率",
                         value = "${(result.rate * 100).toInt()}%",
                         valueColor = MaterialTheme.colorScheme.error,
                         valueFontWeight = FontWeight.Bold
-                    )
-
-                    ResultItem(
-                        label = "应纳税额",
-                        value = "¥${DecimalFormat("#,##0.00").format(result.taxable)}"
                     )
 
                     ResultItem(
@@ -286,19 +320,19 @@ fun TaxRateCalculatorContent(
                         valueFontWeight = FontWeight.Bold
                     )
 
-                    ResultItem(
-                        label = "最终税率",
-                        value = "${DecimalFormat("#,##0.00%").format(result.finalRate)}",
-                        valueColor = MaterialTheme.colorScheme.error,
-                        valueFontWeight = FontWeight.Bold
-                    )
-
                     Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     ResultItem(
                         label = "税后收入",
                         value = "¥${DecimalFormat("#,##0.00").format(result.afterTax)}",
                         valueColor = MaterialTheme.colorScheme.primary,
+                        valueFontWeight = FontWeight.Bold
+                    )
+
+                    ResultItem(
+                        label = "实际税率",
+                        value = "${DecimalFormat("#,##0.00%").format(result.finalRate)}",
+                        valueColor = MaterialTheme.colorScheme.error,
                         valueFontWeight = FontWeight.Bold
                     )
                 }
@@ -330,66 +364,4 @@ private fun ResultItem(
             fontWeight = valueFontWeight
         )
     }
-}
-
-/**
- * 税率计算结果
- */
-data class TaxResult(
-    val bonus: Double,           // 年终奖金额
-    val monthlySalary: Double,   // 当月工资
-    val total: Double,           // 合计收入
-    val rate: Double,            // 税率
-    val taxable: Double,         // 应纳税额
-    val deduction: Double,       // 速算扣除数
-    val tax: Double,             // 应缴个税
-    val afterTax: Double,        // 税后收入
-    val finalRate: Double        // 最终税率：交的税/总金额
-)
-
-/**
- * 计算税率和应缴个税
- */
-fun calculateTax(bonusAmount: Double, monthlySalary: Double): TaxResult {
-    val total = bonusAmount + monthlySalary
-
-    // 个人所得税起征点
-    val taxThreshold = 5000.0
-
-    // 计算年终奖计税基数（考虑当月工资低于起征点的差额）
-    var taxableBonus = bonusAmount
-    if (monthlySalary > 0 && monthlySalary < taxThreshold) {
-        val shortfall = taxThreshold - monthlySalary
-        taxableBonus = maxOf(0.0, bonusAmount - shortfall)
-    }
-
-    // 年终奖税率表（根据年终奖除以12后的金额确定税率）
-    val monthlyBonus = taxableBonus / 12.0
-    val (rate, deduction) = when {
-        monthlyBonus <= 0 -> Pair(0.0, 0.0)
-        monthlyBonus <= 3000 -> Pair(0.03, 0.0)
-        monthlyBonus <= 12000 -> Pair(0.10, 210.0)
-        monthlyBonus <= 25000 -> Pair(0.20, 1410.0)
-        monthlyBonus <= 35000 -> Pair(0.25, 2660.0)
-        monthlyBonus <= 55000 -> Pair(0.30, 4410.0)
-        monthlyBonus <= 80000 -> Pair(0.35, 7160.0)
-        else -> Pair(0.45, 15160.0)
-    }
-
-    val tax = taxableBonus * rate - deduction
-    val finalTax = maxOf(0.0, tax)
-    val afterTax = total - finalTax
-    val finalRate = if (total > 0) finalTax / total else 0.0
-
-    return TaxResult(
-        bonus = bonusAmount,
-        monthlySalary = monthlySalary,
-        total = total,
-        rate = rate,
-        taxable = taxableBonus,
-        deduction = deduction,
-        tax = finalTax,
-        afterTax = afterTax,
-        finalRate = finalRate
-    )
 }

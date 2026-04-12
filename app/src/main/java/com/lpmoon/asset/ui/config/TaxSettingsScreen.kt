@@ -12,40 +12,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.math.BigDecimal
-import java.math.RoundingMode
-
-// 格式化数字为字符串，去除不必要的精度
-private fun formatNumber(value: Double): String {
-    val decimal = BigDecimal.valueOf(value).setScale(10, RoundingMode.HALF_UP)
-        .stripTrailingZeros()
-    return if (decimal.scale() < 0) {
-        decimal.toBigInteger().toString()
-    } else {
-        decimal.toString()
-    }
-}
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lpmoon.asset.data.TaxSettings
+import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaxSettingsScreen(
     onBack: () -> Unit
 ) {
-    val taxSettings by TaxSettingsManager.taxSettings.collectAsState()
+    val viewModel: TaxSettingsViewModel = viewModel()
+    val taxSettings by viewModel.taxSettings.collectAsState()
 
-    var socialSecurityRate by remember { mutableStateOf(formatNumber(taxSettings.socialSecurityRate * 100)) }
-    var housingFundRate by remember { mutableStateOf(formatNumber(taxSettings.housingFundRate * 100)) }
-    var medicalInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.medicalInsuranceRate * 100)) }
-    var unemploymentInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.unemploymentInsuranceRate * 100)) }
-    var specialDeduction by remember { mutableStateOf(formatNumber(taxSettings.specialDeduction)) }
+    var socialSecurityRate by remember { mutableStateOf(viewModel.formatSocialSecurityPercent()) }
+    var housingFundRate by remember { mutableStateOf(viewModel.formatHousingFundPercent()) }
+    var medicalInsuranceRate by remember { mutableStateOf(viewModel.formatMedicalInsurancePercent()) }
+    var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) }
+    var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) }
 
     // 当税率设置变化时，更新本地状态
     LaunchedEffect(taxSettings) {
-        socialSecurityRate = formatNumber(taxSettings.socialSecurityRate * 100)
-        housingFundRate = formatNumber(taxSettings.housingFundRate * 100)
-        medicalInsuranceRate = formatNumber(taxSettings.medicalInsuranceRate * 100)
-        unemploymentInsuranceRate = formatNumber(taxSettings.unemploymentInsuranceRate * 100)
-        specialDeduction = formatNumber(taxSettings.specialDeduction)
+        socialSecurityRate = viewModel.formatSocialSecurityPercent()
+        housingFundRate = viewModel.formatHousingFundPercent()
+        medicalInsuranceRate = viewModel.formatMedicalInsurancePercent()
+        unemploymentInsuranceRate = viewModel.formatUnemploymentInsurancePercent()
+        specialDeduction = viewModel.formatSpecialDeduction()
     }
 
     Scaffold(
@@ -94,9 +85,7 @@ fun TaxSettingsScreen(
                         title = "养老保险",
                         value = socialSecurityRate,
                         suffix = "%",
-                        onValueChange = { newValue ->
-                            socialSecurityRate = newValue
-                        },
+                        onValueChange = { socialSecurityRate = it },
                         description = "个人缴纳比例，按8%设置"
                     )
                     SpacerSettingRow(title = "公积金", value = housingFundRate, suffix = "%", onValueChange = { housingFundRate = it }, description = "个人缴纳比例，按12%设置")
@@ -127,9 +116,7 @@ fun TaxSettingsScreen(
                         title = "每月扣除额",
                         value = specialDeduction,
                         suffix = "元",
-                        onValueChange = { newValue ->
-                            specialDeduction = newValue
-                        },
+                        onValueChange = { specialDeduction = it },
                         description = "子女教育、住房贷款利息等"
                     )
                 }
@@ -138,7 +125,7 @@ fun TaxSettingsScreen(
             // 保存按钮
             Button(
                 onClick = {
-                    TaxSettingsManager.updateTaxSettings(
+                    viewModel.updateTaxSettings(
                         TaxSettings(
                             socialSecurityRate = (socialSecurityRate.toDoubleOrNull() ?: 8.0) / 100.0,
                             housingFundRate = (housingFundRate.toDoubleOrNull() ?: 12.0) / 100.0,

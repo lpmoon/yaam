@@ -11,7 +11,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lpmoon.asset.ui.asset.AssetListScreen
 import com.lpmoon.asset.ui.asset.AssetRankingScreen
 import com.lpmoon.asset.ui.config.ConfigurationScreen
-import com.lpmoon.asset.ui.config.TaxSettingsManager
 import com.lpmoon.asset.ui.config.TaxSettingsScreen
 import com.lpmoon.asset.ui.config.ThemeSettingsScreen
 import com.lpmoon.asset.ui.tax.TaxCalculatorScreen
@@ -31,8 +30,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // 初始化税率设置管理器
-        TaxSettingsManager.initialize(applicationContext)
         setContent {
             资产管理Theme {
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.AssetList) }
@@ -91,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     is Screen.Configuration -> {
                         ConfigurationScreen(
-                            onBack = { currentScreen = Screen.AssetList },
+            onBack = { currentScreen = Screen.AssetList },
                             onNavigateToAssetList = { currentScreen = Screen.AssetList },
                             onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator },
                             onNavigateToThemeSettings = { currentScreen = Screen.ThemeSettings },
@@ -100,12 +97,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     is Screen.ThemeSettings -> {
                         ThemeSettingsScreen(
-                            onBack = { currentScreen = Screen.Configuration }
+            onBack = { currentScreen = Screen.Configuration }
                         )
                     }
                     is Screen.TaxSettings -> {
                         TaxSettingsScreen(
-                            onBack = { currentScreen = Screen.Configuration }
+            onBack = { currentScreen = Screen.Configuration }
                         )
                     }
                 }
