@@ -18,7 +18,7 @@ import java.text.DecimalFormat
 fun TaxCalculatorScreen(
     onBack: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(0) } // 0: 年终奖计算, 1: 普通收入计算, 2: 港股股票计算
+    var selectedTab by remember { mutableStateOf(0) } // 0: 年终奖计算, 1: 普通收入计算
 
     Scaffold(
         topBar = {
@@ -28,22 +28,15 @@ fun TaxCalculatorScreen(
                         text = when (selectedTab) {
                             0 -> "年终奖税率计算器"
                             1 -> "普通收入税率计算器"
-                            2 -> "港股股票归属税率计算器"
                             else -> "税率计算器"
                         },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
         },

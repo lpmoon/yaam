@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.derivedStateOf
@@ -25,6 +26,8 @@ import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.lpmoon.asset.data.Asset
 import com.lpmoon.asset.data.AssetHistory
 import com.lpmoon.asset.data.AssetType
@@ -59,7 +62,8 @@ fun AssetListScreen(
     onSyncSuccess: () -> Unit = {},
     generateSyncQrContent: () -> String? = { null },
     stopSyncServer: () -> Unit = {},
-    onNavigateToTaxCalculator: () -> Unit = {}
+    onNavigateToTaxCalculator: () -> Unit = {},
+    onNavigateToRanking: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingAsset by remember { mutableStateOf<Asset?>(null) }
@@ -71,6 +75,8 @@ fun AssetListScreen(
     var showQrScanner by remember { mutableStateOf(false) }
     var showImportExportDialog by remember { mutableStateOf(false) }
     var showQrActionDialog by remember { mutableStateOf(false) }
+    var showImportExportHelp by remember { mutableStateOf(false) }
+    var showQrSyncHelp by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -172,7 +178,7 @@ fun AssetListScreen(
             bottomBar = {
                 NavigationBar(
                     tonalElevation = 4.dp,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     NavigationBarItem(
                         selected = true,
@@ -215,17 +221,18 @@ fun AssetListScreen(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 4.dp)
                         ) {
                             Text(
                                 text = "¥${DecimalFormat("#,##0.00").format(totalAssets)}",
-                                style = MaterialTheme.typography.headlineLarge,
+                                style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.weight(1f)
                             )
 
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
 
                             val clipboardManager = LocalClipboardManager.current
                             val totalAssetsText = "¥${DecimalFormat("#,##0.00").format(totalAssets)}"
@@ -234,18 +241,27 @@ fun AssetListScreen(
                                     clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(totalAssetsText))
                                     Toast.makeText(context, "已复制: $totalAssetsText", Toast.LENGTH_SHORT).show()
                                 },
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(25.dp)
                             ) {
                                 Icon(Icons.Default.ContentCopy, contentDescription = "复制总资产", tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
 
-                            Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.width(7.dp))
 
                             IconButton(
                                 onClick = { showChartScreen = true },
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(25.dp)
                             ) {
                                 Icon(Icons.Default.Timeline, contentDescription = "资产趋势", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
+
+                            Spacer(modifier = Modifier.width(7.dp))
+
+                            IconButton(
+                                onClick = onNavigateToRanking,
+                                modifier = Modifier.size(25.dp)
+                            ) {
+                                Icon(Icons.Default.BarChart, contentDescription = "资产排行榜", tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                         }
                     }
@@ -395,33 +411,49 @@ fun AssetListScreen(
     if (showImportExportDialog) {
         AlertDialog(
             onDismissRequest = { showImportExportDialog = false },
-            title = { Text("导入导出") },
+            title = { Text("文件同步") },
             text = {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            exportLauncher.launch(generateDefaultFileName())
-                            showImportExportDialog = false
-                        },
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(Icons.Default.FileDownload, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("导出")
+                        Button(
+                            onClick = {
+                                exportLauncher.launch(generateDefaultFileName())
+                                showImportExportDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.FileDownload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("导出")
+                        }
+                        Button(
+                            onClick = {
+                                importLauncher.launch(arrayOf("application/json"))
+                                showImportExportDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.FileUpload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("导入")
+                        }
                     }
-                    Button(
+                    TextButton(
                         onClick = {
-                            importLauncher.launch(arrayOf("application/json"))
                             showImportExportDialog = false
+                            showImportExportHelp = true
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
-                        Icon(Icons.Default.FileUpload, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("导入")
+                        Text("使用说明")
                     }
                 }
             },
@@ -437,33 +469,49 @@ fun AssetListScreen(
     if (showQrActionDialog) {
         AlertDialog(
             onDismissRequest = { showQrActionDialog = false },
-            title = { Text("二维码") },
+            title = { Text("二维码同步") },
             text = {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            showQrCodeDialog = true
-                            showQrActionDialog = false
-                        },
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(Icons.Default.QrCode, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("生成")
+                        Button(
+                            onClick = {
+                                showQrCodeDialog = true
+                                showQrActionDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.QrCode, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("生成")
+                        }
+                        Button(
+                            onClick = {
+                                showQrScanner = true
+                                showQrActionDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("扫描")
+                        }
                     }
-                    Button(
+                    TextButton(
                         onClick = {
-                            showQrScanner = true
                             showQrActionDialog = false
+                            showQrSyncHelp = true
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("扫描")
+                        Text("使用说明")
                     }
                 }
             },
@@ -476,4 +524,107 @@ fun AssetListScreen(
         )
     }
 
+    if (showImportExportHelp) {
+        HelpDialog(
+            title = "📁 文件同步说明",
+            content = """
+                文件同步功能允许您将资产数据导出为JSON文件备份，或从JSON文件导入恢复数据。
+
+                🔄 使用步骤：
+                1. 【导出】- 将当前所有资产数据保存为JSON文件，可用于备份或分享
+                2. 【导入】- 从JSON文件恢复资产数据，替换当前所有数据
+                3. 【文件格式】- 标准JSON格式，可在不同设备间共享
+
+                ⚠️ 注意事项：
+                • 导入操作会替换当前所有资产数据，请提前备份
+                • JSON文件包含资产名称、类型、值和货币信息
+                • 建议定期导出备份，防止数据丢失
+                • 文件保存在设备存储中，可手动分享给其他设备
+
+                💡 提示：导出文件默认名称为 assets_export_年月日_时分秒.json
+            """.trimIndent(),
+            onDismiss = { showImportExportHelp = false }
+        )
+    }
+
+    if (showQrSyncHelp) {
+        HelpDialog(
+            title = "📱 二维码同步说明",
+            content = """
+                二维码同步功能允许您通过扫描二维码在不同设备间快速同步资产数据。
+
+                🔄 使用步骤：
+                1. 【生成二维码】- 在当前设备生成包含资产数据的二维码
+                2. 【扫描二维码】- 在其他设备扫描二维码获取数据
+                3. 【自动同步】- 扫描后自动导入资产数据，无需手动操作
+
+                ⚠️ 安全注意事项：
+                • 二维码包含当前所有资产数据，请勿随意分享给他人
+                • 二维码有效期为生成后的30分钟内
+                • 同步过程使用加密传输，保护数据安全
+                • 建议在可信设备间进行同步操作
+
+                💡 使用场景：
+                • 在新设备上快速导入资产数据
+                • 与家人共享家庭资产数据
+                • 备份数据到另一台设备
+                • 临时查看其他设备的资产情况
+
+                📋 技术说明：二维码包含服务器地址、会话ID和加密密钥，扫描后建立点对点同步连接。
+            """.trimIndent(),
+            onDismiss = { showQrSyncHelp = false }
+        )
+    }
+
+}
+
+/**
+ * 帮助说明对话框
+ */
+@Composable
+fun HelpDialog(
+    title: String,
+    content: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.3
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("知道了")
+                }
+            }
+        }
+    }
 }

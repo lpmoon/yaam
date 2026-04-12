@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lpmoon.asset.ui.asset.AssetListScreen
+import com.lpmoon.asset.ui.asset.AssetRankingScreen
 import com.lpmoon.asset.ui.tax.TaxCalculatorScreen
 import com.lpmoon.asset.ui.theme.资产管理Theme
 import com.lpmoon.asset.viewmodel.AssetViewModel
@@ -16,6 +17,7 @@ import com.lpmoon.asset.viewmodel.AssetViewModel
 sealed class Screen(val title: String) {
     data object AssetList : Screen("个人资产")
     data object TaxCalculator : Screen("税率计算器")
+    data object Ranking : Screen("资产排行榜")
 }
 
 class MainActivity : AppCompatActivity() {
@@ -58,11 +60,20 @@ class MainActivity : AppCompatActivity() {
                             onSyncSuccess = {},
                             generateSyncQrContent = viewModel::generateSyncQrContent,
                             stopSyncServer = viewModel::stopSyncServer,
-                            onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator }
+                            onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator },
+                            onNavigateToRanking = { currentScreen = Screen.Ranking }
                         )
                     }
                     is Screen.TaxCalculator -> {
                         TaxCalculatorScreen(
+                            onBack = { currentScreen = Screen.AssetList }
+                        )
+                    }
+                    is Screen.Ranking -> {
+                        AssetRankingScreen(
+                            assets = viewModel.assets.collectAsState().value,
+                            totalAssets = viewModel.totalAssets.collectAsState().value,
+                            getAssetValueInCny = viewModel::getAssetValueInCny,
                             onBack = { currentScreen = Screen.AssetList }
                         )
                     }
