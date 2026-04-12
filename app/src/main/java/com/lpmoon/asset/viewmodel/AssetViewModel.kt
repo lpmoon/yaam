@@ -157,8 +157,11 @@ class AssetViewModel(application: Application) : AndroidViewModel(application) {
         val oldAsset = _assets.value.find { it.id == assetId }
         _assets.value = _assets.value.filter { it.id != assetId }
         oldAsset?.let {
-            recordHistory(assetId, it.value, "", OperationType.DELETE.name)
+            // 可选：记录删除操作（注释掉以避免历史记录混淆）
+            // recordHistory(assetId, it.value, "", OperationType.DELETE.name)
         }
+        // 清理该资产的所有历史记录，避免ID重复使用时混淆
+        repository.deleteHistoriesByAssetId(assetId)
         saveAssets()
         recordTotalAssetSnapshot()
     }

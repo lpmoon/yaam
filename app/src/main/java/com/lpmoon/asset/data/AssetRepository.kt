@@ -94,6 +94,41 @@ class AssetRepository(context: Context) {
         sharedPreferences.edit().remove(KEY_TOTAL_ASSET_HISTORY).apply()
     }
 
+    /**
+     * 删除指定资产的所有历史记录
+     * @param assetId 资产ID
+     */
+    fun deleteHistoriesByAssetId(assetId: Long) {
+        val allHistory = getAllAssetHistories()
+        val filteredHistory = allHistory.filter { it.assetId != assetId }
+        val json = gson.toJson(filteredHistory)
+        sharedPreferences.edit().putString(KEY_ASSET_HISTORIES, json).apply()
+    }
+
+    /**
+     * 保留指定资产的最后一条历史记录，删除其他所有记录
+     * @param assetId 资产ID
+     */
+    fun keepOnlyLastHistoryByAssetId(assetId: Long) {
+        val allHistory = getAllAssetHistories()
+        val assetHistories = allHistory.filter { it.assetId == assetId }
+
+        if (assetHistories.isEmpty()) {
+            return
+        }
+
+        // 找到时间戳最大的记录（最后一条）
+        val maxTimestamp = assetHistories.maxOf { it.timestamp }
+
+        // 保留时间戳最大的记录，删除该资产的其他所有记录
+        val filteredHistory = allHistory.filter {
+            it.assetId != assetId || it.timestamp == maxTimestamp
+        }
+
+        val json = gson.toJson(filteredHistory)
+        sharedPreferences.edit().putString(KEY_ASSET_HISTORIES, json).apply()
+    }
+
     fun clearAllData() {
         sharedPreferences.edit().apply {
             remove(KEY_ASSETS)

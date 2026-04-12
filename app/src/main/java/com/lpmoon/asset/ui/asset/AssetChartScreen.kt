@@ -27,10 +27,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
 import com.lpmoon.asset.data.TimeDimension
 import java.text.DecimalFormat
 import kotlin.math.abs
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,6 +229,7 @@ fun AssetLineChart(
     val valueRange = maxValue - minValue
     val primaryColor = MaterialTheme.colorScheme.primary
     val canvasSize = remember { mutableStateOf(IntSize.Zero) }
+    val textMeasurer = rememberTextMeasurer()
     val chartModifier = if (onPointClick != null) {
         modifier
             .onSizeChanged { canvasSize.value = it }
@@ -232,7 +237,7 @@ fun AssetLineChart(
                 detectTapGestures { offset ->
                     // 计算点击位置
                     val paddingLeft = 40f
-                    val paddingRight = 20f
+                    val paddingRight = 60f  // 与绘图时的paddingRight一致
                     val paddingTop = 40f
                     val paddingBottom = 40f
                     val canvasWidth = canvasSize.value.width - paddingLeft - paddingRight
@@ -275,7 +280,7 @@ fun AssetLineChart(
     val paddingTop = 40f
     val paddingBottom = 40f
     val paddingLeft = 40f
-    val paddingRight = 20f
+    val paddingRight = 60f  // 增加右侧边距以显示Y轴标签
 
     Canvas(modifier = chartModifier) {
         val canvasWidth = size.width - paddingLeft - paddingRight
@@ -334,6 +339,66 @@ fun AssetLineChart(
             )
         }
 
+        // 绘制Y轴刻度标签（只显示最大值和最小值）
+        val decimalFormat = DecimalFormat("#,##0.00")
+        val textStyle = TextStyle(color = Color.Gray, fontSize = 12.sp)
+
+        // 绘制最小值标签（底部）
+        val minValueText = decimalFormat.format(minValue)
+        val minTextLayoutResult = textMeasurer.measure(minValueText, textStyle)
+        val minY = paddingTop + canvasHeight  // 底部位置
+        drawText(
+            textLayoutResult = minTextLayoutResult,
+            topLeft = Offset(paddingLeft + 15, minY - minTextLayoutResult.size.height / 2)
+        )
+
+        // 绘制最大值标签（顶部）
+        val maxValueText = decimalFormat.format(maxValue)
+        val maxTextLayoutResult = textMeasurer.measure(maxValueText, textStyle)
+        val maxY = paddingTop  // 顶部位置
+        drawText(
+            textLayoutResult = maxTextLayoutResult,
+            topLeft = Offset(paddingLeft + 15, maxY - maxTextLayoutResult.size.height / 2)
+        )
+
+        // 绘制X轴刻度
+        val xTickCount = minOf(5, history.size)
+        for (i in 0 until xTickCount) {
+            val x = if (xTickCount > 1) {
+                paddingLeft + canvasWidth * i.toFloat() / (xTickCount - 1).toFloat()
+            } else {
+                paddingLeft + canvasWidth / 2
+            }
+
+            // 刻度线
+            drawLine(
+                color = Color.LightGray,
+                start = Offset(x, paddingTop + canvasHeight),
+                end = Offset(x, paddingTop + canvasHeight + 5),
+                strokeWidth = 1f
+            )
+        }
+
+        // 绘制X轴起点和终点时间标签
+        if (history.isNotEmpty()) {
+            val startDate = history.first().first
+            val endDate = history.last().first
+
+            // 起点时间标签
+            val startTextLayoutResult = textMeasurer.measure(startDate, textStyle)
+            drawText(
+                textLayoutResult = startTextLayoutResult,
+                topLeft = Offset(paddingLeft, paddingTop + canvasHeight + 10)
+            )
+
+            // 终点时间标签
+            val endTextLayoutResult = textMeasurer.measure(endDate, textStyle)
+            drawText(
+                textLayoutResult = endTextLayoutResult,
+                topLeft = Offset(paddingLeft + canvasWidth - endTextLayoutResult.size.width, paddingTop + canvasHeight + 10)
+            )
+        }
+
         // 绘制数据点和折线
         val pointRadius = 6f
         val path = Path()
@@ -376,24 +441,6 @@ fun AssetLineChart(
                 path = path,
                 color = primaryColor,
                 style = Stroke(width = 3f)
-            )
-        }
-
-        // 绘制X轴刻度
-        val xTickCount = minOf(5, history.size)
-        for (i in 0 until xTickCount) {
-            val x = if (xTickCount > 1) {
-                paddingLeft + canvasWidth * i.toFloat() / (xTickCount - 1).toFloat()
-            } else {
-                paddingLeft + canvasWidth / 2
-            }
-
-            // 刻度线
-            drawLine(
-                color = Color.LightGray,
-                start = Offset(x, paddingTop + canvasHeight),
-                end = Offset(x, paddingTop + canvasHeight + 5),
-                strokeWidth = 1f
             )
         }
     }
