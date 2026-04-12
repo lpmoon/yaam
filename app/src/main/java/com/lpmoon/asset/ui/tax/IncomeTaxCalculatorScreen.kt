@@ -13,7 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.lpmoon.asset.ui.config.TaxSettingsManager
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.DecimalFormat
+
+// 格式化数字为字符串，去除不必要的精度
+private fun formatNumber(value: Double): String {
+    val decimal = BigDecimal.valueOf(value).setScale(10, RoundingMode.HALF_UP)
+        .stripTrailingZeros()
+    return if (decimal.scale() < 0) {
+        decimal.toBigInteger().toString()
+    } else {
+        decimal.toString()
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,22 +35,33 @@ fun IncomeTaxCalculatorScreen(
     onBack: () -> Unit,
     isEmbedded: Boolean = false
 ) {
+    val taxSettings by TaxSettingsManager.taxSettings.collectAsState()
+
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
     var calculationMode by remember { mutableStateOf(0) } // 0: 月薪, 1: 年薪
-    var socialSecurityRate by remember { mutableStateOf("0.08") } // 养老保险个人比例
-    var housingFundRate by remember { mutableStateOf("0.12") } // 公积金个人比例
-    var medicalInsuranceRate by remember { mutableStateOf("0.02") } // 医疗保险个人比例
-    var unemploymentInsuranceRate by remember { mutableStateOf("0.005") } // 失业保险个人比例
-    var specialDeduction by remember { mutableStateOf("0") } // 专项附加扣除
+    var socialSecurityRate by remember { mutableStateOf(formatNumber(taxSettings.socialSecurityRate * 100)) } // 养老保险个人比例
+    var housingFundRate by remember { mutableStateOf(formatNumber(taxSettings.housingFundRate * 100)) } // 公积金个人比例
+    var medicalInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.medicalInsuranceRate * 100)) } // 医疗保险个人比例
+    var unemploymentInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.unemploymentInsuranceRate * 100)) } // 失业保险个人比例
+    var specialDeduction by remember { mutableStateOf(formatNumber(taxSettings.specialDeduction)) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
+
+    // 当税率设置变化时，更新本地状态
+    LaunchedEffect(taxSettings) {
+        socialSecurityRate = formatNumber(taxSettings.socialSecurityRate * 100)
+        housingFundRate = formatNumber(taxSettings.housingFundRate * 100)
+        medicalInsuranceRate = formatNumber(taxSettings.medicalInsuranceRate * 100)
+        unemploymentInsuranceRate = formatNumber(taxSettings.unemploymentInsuranceRate * 100)
+        specialDeduction = formatNumber(taxSettings.specialDeduction)
+    }
 
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
     val annualSalaryValue = annualSalary.toDoubleOrNull() ?: 0.0
-    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 0.08
-    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 0.12
-    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 0.02
-    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.005
+    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 8.0
+    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 12.0
+    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 2.0
+    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.5
     val specialDeductionValue = specialDeduction.toDoubleOrNull() ?: 0.0
 
     // 根据计算模式确定月薪
@@ -49,10 +74,10 @@ fun IncomeTaxCalculatorScreen(
     val result = if (baseMonthlySalary > 0) {
         calculateIncomeTax(
             monthlySalary = baseMonthlySalary,
-            socialSecurityRate = socialSecurityRateValue,
-            housingFundRate = housingFundRateValue,
-            medicalInsuranceRate = medicalInsuranceRateValue,
-            unemploymentInsuranceRate = unemploymentInsuranceRateValue,
+            socialSecurityRate = socialSecurityRateValue / 100.0,
+            housingFundRate = housingFundRateValue / 100.0,
+            medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+            unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
             specialDeduction = specialDeductionValue
         )
     } else {
@@ -324,12 +349,12 @@ fun IncomeTaxCalculatorContent(
                     value = socialSecurityRate,
                     onValueChange = onSocialSecurityRateChange,
                     label = { Text("养老保险个人比例") },
-                    placeholder = { Text("例如：0.08 表示 8%") },
+                    placeholder = { Text("例如：8 表示 8%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = socialSecurityRate.isNotEmpty() && (socialSecurityRateValue < 0 || socialSecurityRateValue > 1)
+                    isError = socialSecurityRate.isNotEmpty() && (socialSecurityRateValue < 0 || socialSecurityRateValue > 100)
                 )
 
                 // 公积金比例
@@ -337,12 +362,12 @@ fun IncomeTaxCalculatorContent(
                     value = housingFundRate,
                     onValueChange = onHousingFundRateChange,
                     label = { Text("公积金个人比例") },
-                    placeholder = { Text("例如：0.12 表示 12%") },
+                    placeholder = { Text("例如：12 表示 12%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = housingFundRate.isNotEmpty() && (housingFundRateValue < 0 || housingFundRateValue > 1)
+                    isError = housingFundRate.isNotEmpty() && (housingFundRateValue < 0 || housingFundRateValue > 100)
                 )
 
                 // 医疗保险比例
@@ -350,12 +375,12 @@ fun IncomeTaxCalculatorContent(
                     value = medicalInsuranceRate,
                     onValueChange = onMedicalInsuranceRateChange,
                     label = { Text("医疗保险个人比例") },
-                    placeholder = { Text("例如：0.02 表示 2%") },
+                    placeholder = { Text("例如：2 表示 2%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = medicalInsuranceRate.isNotEmpty() && (medicalInsuranceRateValue < 0 || medicalInsuranceRateValue > 1)
+                    isError = medicalInsuranceRate.isNotEmpty() && (medicalInsuranceRateValue < 0 || medicalInsuranceRateValue > 100)
                 )
 
                 // 失业保险比例
@@ -363,12 +388,12 @@ fun IncomeTaxCalculatorContent(
                     value = unemploymentInsuranceRate,
                     onValueChange = onUnemploymentInsuranceRateChange,
                     label = { Text("失业保险个人比例") },
-                    placeholder = { Text("例如：0.005 表示 0.5%") },
+                    placeholder = { Text("例如：0.5 表示 0.5%") },
                     trailingIcon = { Text("%") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = unemploymentInsuranceRate.isNotEmpty() && (unemploymentInsuranceRateValue < 0 || unemploymentInsuranceRateValue > 1)
+                    isError = unemploymentInsuranceRate.isNotEmpty() && (unemploymentInsuranceRateValue < 0 || unemploymentInsuranceRateValue > 100)
                 )
             }
         }
@@ -418,10 +443,10 @@ fun IncomeTaxCalculatorContent(
                 }
             },
             enabled = baseMonthlySalary > 0 &&
-                    socialSecurityRateValue >= 0 && socialSecurityRateValue <= 1 &&
-                    housingFundRateValue >= 0 && housingFundRateValue <= 1 &&
-                    medicalInsuranceRateValue >= 0 && medicalInsuranceRateValue <= 1 &&
-                    unemploymentInsuranceRateValue >= 0 && unemploymentInsuranceRateValue <= 1 &&
+                    socialSecurityRateValue >= 0 && socialSecurityRateValue <= 100 &&
+                    housingFundRateValue >= 0 && housingFundRateValue <= 100 &&
+                    medicalInsuranceRateValue >= 0 && medicalInsuranceRateValue <= 100 &&
+                    unemploymentInsuranceRateValue >= 0 && unemploymentInsuranceRateValue <= 100 &&
                     specialDeductionValue >= 0,
             modifier = Modifier.fillMaxWidth()
         ) {

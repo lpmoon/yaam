@@ -11,12 +11,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.lpmoon.asset.ui.config.TaxSettingsManager
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.DecimalFormat
+
+// 格式化数字为字符串，去除不必要的精度
+private fun formatNumber(value: Double): String {
+    val decimal = BigDecimal.valueOf(value).setScale(10, RoundingMode.HALF_UP)
+        .stripTrailingZeros()
+    return if (decimal.scale() < 0) {
+        decimal.toBigInteger().toString()
+    } else {
+        decimal.toString()
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaxCalculatorScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToConfiguration: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: 年终奖计算, 1: 普通收入计算
 
@@ -56,6 +71,12 @@ fun TaxCalculatorScreen(
                     onClick = {},
                     icon = { Icon(Icons.Default.Calculate, contentDescription = null) },
                     label = { Text("税率计算") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateToConfiguration,
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("配置") }
                 )
             }
         }
@@ -145,22 +166,33 @@ private fun TaxRateCalculatorContentWrapper() {
 
 @Composable
 private fun IncomeTaxCalculatorContentWrapper() {
+    val taxSettings by TaxSettingsManager.taxSettings.collectAsState()
+
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
     var calculationMode by remember { mutableStateOf(0) } // 0: 月薪, 1: 年薪
-    var socialSecurityRate by remember { mutableStateOf("0.08") } // 养老保险个人比例
-    var housingFundRate by remember { mutableStateOf("0.12") } // 公积金个人比例
-    var medicalInsuranceRate by remember { mutableStateOf("0.02") } // 医疗保险个人比例
-    var unemploymentInsuranceRate by remember { mutableStateOf("0.005") } // 失业保险个人比例
-    var specialDeduction by remember { mutableStateOf("0") } // 专项附加扣除
+    var socialSecurityRate by remember { mutableStateOf(formatNumber(taxSettings.socialSecurityRate * 100)) } // 养老保险个人比例
+    var housingFundRate by remember { mutableStateOf(formatNumber(taxSettings.housingFundRate * 100)) } // 公积金个人比例
+    var medicalInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.medicalInsuranceRate * 100)) } // 医疗保险个人比例
+    var unemploymentInsuranceRate by remember { mutableStateOf(formatNumber(taxSettings.unemploymentInsuranceRate * 100)) } // 失业保险个人比例
+    var specialDeduction by remember { mutableStateOf(formatNumber(taxSettings.specialDeduction)) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
+
+    // 当税率设置变化时，更新本地状态
+    LaunchedEffect(taxSettings) {
+        socialSecurityRate = formatNumber(taxSettings.socialSecurityRate * 100)
+        housingFundRate = formatNumber(taxSettings.housingFundRate * 100)
+        medicalInsuranceRate = formatNumber(taxSettings.medicalInsuranceRate * 100)
+        unemploymentInsuranceRate = formatNumber(taxSettings.unemploymentInsuranceRate * 100)
+        specialDeduction = formatNumber(taxSettings.specialDeduction)
+    }
 
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
     val annualSalaryValue = annualSalary.toDoubleOrNull() ?: 0.0
-    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 0.08
-    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 0.12
-    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 0.02
-    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.005
+    val socialSecurityRateValue = socialSecurityRate.toDoubleOrNull() ?: 8.0
+    val housingFundRateValue = housingFundRate.toDoubleOrNull() ?: 12.0
+    val medicalInsuranceRateValue = medicalInsuranceRate.toDoubleOrNull() ?: 2.0
+    val unemploymentInsuranceRateValue = unemploymentInsuranceRate.toDoubleOrNull() ?: 0.5
     val specialDeductionValue = specialDeduction.toDoubleOrNull() ?: 0.0
 
     // 根据计算模式确定月薪
@@ -173,10 +205,10 @@ private fun IncomeTaxCalculatorContentWrapper() {
     val result = if (baseMonthlySalary > 0) {
         calculateIncomeTax(
             monthlySalary = baseMonthlySalary,
-            socialSecurityRate = socialSecurityRateValue,
-            housingFundRate = housingFundRateValue,
-            medicalInsuranceRate = medicalInsuranceRateValue,
-            unemploymentInsuranceRate = unemploymentInsuranceRateValue,
+            socialSecurityRate = socialSecurityRateValue / 100.0,
+            housingFundRate = housingFundRateValue / 100.0,
+            medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+            unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
             specialDeduction = specialDeductionValue
         )
     } else {
