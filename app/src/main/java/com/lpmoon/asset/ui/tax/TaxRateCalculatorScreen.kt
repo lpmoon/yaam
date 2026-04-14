@@ -13,7 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.data.*
+import com.lpmoon.asset.data.tax.BonusTaxResult
+import com.lpmoon.asset.data.tax.calculateBonusTax
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +31,8 @@ fun TaxRateCalculatorScreen(
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result = calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    val result =
+        calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
 
     if (isEmbedded) {
         // 在嵌入模式下，只显示内容部分

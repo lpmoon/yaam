@@ -1,8 +1,6 @@
 package com.lpmoon.asset.ui.tax
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -12,7 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.lpmoon.asset.data.*
+import com.lpmoon.asset.data.tax.calculateBonusTax
+import com.lpmoon.asset.data.tax.calculateIncomeTax
 import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -134,7 +133,8 @@ private fun TaxRateCalculatorContentWrapper() {
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result = calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    val result =
+        calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
 
     TaxRateCalculatorContent(
         bonusAmount = bonusAmount,

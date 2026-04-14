@@ -1,13 +1,28 @@
 package com.lpmoon.asset.ui.asset
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CorporateFare
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,11 +30,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.data.Asset
-import com.lpmoon.asset.data.AssetHistory
-import com.lpmoon.asset.data.AssetType
-import com.lpmoon.asset.data.CurrencyType
+import com.lpmoon.asset.data.asset.Asset
+import com.lpmoon.asset.data.asset.AssetHistory
+import com.lpmoon.asset.data.asset.AssetType
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 根据资产类型和名称获取图标
@@ -159,5 +176,117 @@ fun HistoryItem(history: AssetHistory) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/**
+ * 资产快照内容组件 —— 总资产卡片 + 按类型分组的资产列表。
+ *
+ * 该组件同时被 [AssetListScreen] 的正常视图和截图场景复用，
+ * 以确保截图内容与屏幕显示完全一致。
+ *
+ * @param assets              资产列表
+ * @param totalAssets         总资产（人民币）
+ * @param getAssetValueInCny  将资产换算为人民币的函数
+ * @param modifier            外部传入的 Modifier，用于截图时指定捕获区域
+ * @param showTimestamp       是否在底部显示生成时间水印（截图时为 true）
+ * @param onAssetClick        点击单个资产条目的回调；截图场景传 null 表示不可点击
+ * @param cardActions         总资产卡片内金额右侧的额外操作按钮（复制/趋势/排行榜等）；
+ *                            截图场景不传，保持卡片干净
+ */
+@Composable
+fun AssetSnapshotContent(
+    assets: List<Asset>,
+    totalAssets: Double,
+    getAssetValueInCny: (Asset) -> Double,
+    modifier: Modifier = Modifier,
+    showTimestamp: Boolean = false,
+    onAssetClick: ((Asset) -> Unit)? = null,
+    cardActions: @Composable (() -> Unit)? = null
+) {
+    Column(modifier = modifier) {
+        // ---- 总资产卡片 ----
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "总资产 (人民币)",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "¥${DecimalFormat("#,##0.00").format(totalAssets)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    // 主屏下显示操作按钮；截图时 cardActions 为 null，不渲染
+                    cardActions?.invoke()
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ---- 资产分组列表 ----
+        if (assets.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "暂无资产",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            val groupedAssets = assets.groupBy { AssetType.fromString(it.type) }
+            val orderedAssetTypes = AssetType.entries
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                orderedAssetTypes.forEach { assetType ->
+                    val assetsInGroup = groupedAssets[assetType]
+                    if (!assetsInGroup.isNullOrEmpty()) {
+                        val totalAmount = assetsInGroup.sumOf { getAssetValueInCny(it) }
+                        AssetTypeHeader(assetType = assetType, totalAmount = totalAmount)
+                        assetsInGroup.forEach { asset ->
+                            AssetListItem(
+                                asset = asset,
+                                getValueInCny = getAssetValueInCny,
+                                onClick = { onAssetClick?.invoke(asset) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                }
+            }
+        }
+
+        // ---- 可选时间水印 ----
+        if (showTimestamp) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "生成时间：${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.End)
+            )
+        }
     }
 }

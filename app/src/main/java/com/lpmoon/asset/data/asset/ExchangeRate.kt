@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.asset
 
 data class ExchangeRate(
     val usdToCny: Double,

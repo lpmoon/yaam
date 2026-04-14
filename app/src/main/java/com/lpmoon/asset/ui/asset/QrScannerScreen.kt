@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.lpmoon.asset.data.asset.AssetImportExportService
 import com.lpmoon.asset.sync.AssetSyncClient
 import kotlinx.coroutines.launch
 
@@ -52,7 +53,7 @@ fun QrScannerScreen(
 
             // 下载资产数据
             assetSyncClient.downloadAssets(syncInfo, object : AssetSyncClient.SyncCallback {
-                override fun onSuccess(assets: List<com.lpmoon.asset.data.AssetImportExportService.ExportAsset>) {
+                override fun onSuccess(assets: List<AssetImportExportService.ExportAsset>) {
                     // 转换为JSON
                     val gson = Gson()
                     val json = gson.toJson(assets)

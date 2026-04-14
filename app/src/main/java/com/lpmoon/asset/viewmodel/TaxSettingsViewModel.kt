@@ -3,9 +3,9 @@ package com.lpmoon.asset.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpmoon.asset.data.TaxSettings
-import com.lpmoon.asset.data.TaxSettingsRepository
-import com.lpmoon.asset.data.formatNumber
+import com.lpmoon.asset.data.tax.TaxSettings
+import com.lpmoon.asset.data.tax.TaxSettingsRepository
+import com.lpmoon.asset.data.tax.formatNumber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

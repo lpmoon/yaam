@@ -1,13 +1,9 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.asset
 
 import android.content.Context
 import android.net.Uri
-import android.webkit.MimeTypeMap
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.lpmoon.asset.data.AssetType
-import com.lpmoon.asset.data.CurrencyType
-import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 

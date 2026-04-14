@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.asset
 
 data class Asset(
     val id: Long = 0,

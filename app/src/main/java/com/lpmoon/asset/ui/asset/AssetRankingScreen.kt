@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lpmoon.asset.data.Asset
+import com.lpmoon.asset.data.asset.Asset
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
