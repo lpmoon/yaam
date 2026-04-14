@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.tax
 
 import android.content.Context
 import android.content.SharedPreferences

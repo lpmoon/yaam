@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.tax
 
 import java.math.BigDecimal
 import java.math.RoundingMode

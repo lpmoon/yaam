@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.asset
 
 enum class CurrencyType(val displayName: String, val symbol: String) {
     CNY("人民币", "¥"),

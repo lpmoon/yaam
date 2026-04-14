@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import android.widget.Toast
-import android.content.Context
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,18 +14,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.Asset
-import com.lpmoon.asset.data.AssetHistory
-import com.lpmoon.asset.data.AssetType
-import com.lpmoon.asset.data.CurrencyType
-import com.lpmoon.asset.data.ExchangeRate
+import com.lpmoon.asset.data.asset.Asset
+import com.lpmoon.asset.data.asset.AssetHistory
+import com.lpmoon.asset.data.asset.CurrencyType
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)

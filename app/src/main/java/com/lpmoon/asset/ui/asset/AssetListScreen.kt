@@ -1,41 +1,73 @@
 package com.lpmoon.asset.ui.asset
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.Help
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
-import android.content.Context
-import android.widget.Toast
-import androidx.compose.foundation.border
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.Asset
-import com.lpmoon.asset.data.AssetHistory
-import com.lpmoon.asset.data.AssetType
-import com.lpmoon.asset.data.CurrencyType
-import com.lpmoon.asset.data.ExchangeRate
-import com.lpmoon.asset.data.TimeDimension
-import com.lpmoon.asset.ui.asset.QrCodeDialog
+import com.lpmoon.asset.data.asset.Asset
+import com.lpmoon.asset.data.asset.AssetHistory
+import com.lpmoon.asset.data.asset.ExchangeRate
+import com.lpmoon.asset.data.asset.TimeDimension
 import com.lpmoon.asset.sync.AssetSyncClient
+import com.lpmoon.asset.util.AssetSnapshotUtil
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,6 +194,22 @@ fun AssetListScreen(
                             ) {
                                 Icon(Icons.Default.QrCode, contentDescription = "二维码")
                             }
+                            // 截图保存按钮：Canvas 离屏渲染完整内容，不受滚动截断影响
+                            IconButton(
+                                onClick = {
+                                    val success = AssetSnapshotUtil.renderAndSave(
+                                        context,
+                                        assets,
+                                        totalAssets,
+                                        getAssetValueInCny
+                                    )
+                                    val message = if (success) "资产截图已保存到相册" else "截图保存失败"
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = "保存资产截图")
+                            }
                             IconButton(
                                 onClick = { showClearConfirmationDialog = true },
                                 modifier = Modifier.size(36.dp)
@@ -208,124 +256,64 @@ fun AssetListScreen(
                     .padding(paddingValues)
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
             ) {
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            text = "总资产 (人民币)",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 4.dp)
+                // ---- 可截图的内容区域（总资产卡片 + 资产列表）----
+                // verticalScroll 保证资产较多时主屏仍可滚动。
+                val scrollState = rememberScrollState()
+                val clipboardManager = LocalClipboardManager.current
+                val totalAssetsText = "¥${DecimalFormat("#,##0.00").format(totalAssets)}"
+                AssetSnapshotContent(
+                    assets = assets,
+                    totalAssets = totalAssets,
+                    getAssetValueInCny = getAssetValueInCny,
+                    showTimestamp = false,
+                    onAssetClick = { asset -> selectedAsset = asset },
+                    cardActions = {
+                        // 复制、趋势图、排行榜按钮——仅主屏显示，截图时不含
+                        IconButton(
+                            onClick = {
+                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(totalAssetsText))
+                                Toast.makeText(context, "已复制: $totalAssetsText", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(25.dp)
                         ) {
-                            Text(
-                                text = "¥${DecimalFormat("#,##0.00").format(totalAssets)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Spacer(modifier = Modifier.width(2.dp))
-
-                            val clipboardManager = LocalClipboardManager.current
-                            val totalAssetsText = "¥${DecimalFormat("#,##0.00").format(totalAssets)}"
-                            IconButton(
-                                onClick = {
-                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(totalAssetsText))
-                                    Toast.makeText(context, "已复制: $totalAssetsText", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.size(25.dp)
-                            ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "复制总资产", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-
-                            Spacer(modifier = Modifier.width(7.dp))
-
-                            IconButton(
-                                onClick = { showChartScreen = true },
-                                modifier = Modifier.size(25.dp)
-                            ) {
-                                Icon(Icons.Default.Timeline, contentDescription = "资产趋势", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-
-                            Spacer(modifier = Modifier.width(7.dp))
-
-                            IconButton(
-                                onClick = onNavigateToRanking,
-                                modifier = Modifier.size(25.dp)
-                            ) {
-                                Icon(Icons.Default.BarChart, contentDescription = "资产排行榜", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
+                            Icon(Icons.Default.ContentCopy, contentDescription = "复制总资产",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
-                    }
-                }
+                        Spacer(modifier = Modifier.width(7.dp))
+                        IconButton(
+                            onClick = { showChartScreen = true },
+                            modifier = Modifier.size(25.dp)
+                        ) {
+                            Icon(Icons.Default.Timeline, contentDescription = "资产趋势",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        Spacer(modifier = Modifier.width(7.dp))
+                        IconButton(
+                            onClick = onNavigateToRanking,
+                            modifier = Modifier.size(25.dp)
+                        ) {
+                            Icon(Icons.Default.BarChart, contentDescription = "资产排行榜",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-
-                Spacer(modifier = Modifier.height(4.dp))
-
+                // 空数据时额外提示
                 if (assets.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 40.dp),
+                            .padding(top = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "暂无资产，点击右下角按钮添加",
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "点击右上角 + 按钮添加资产",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                } else {
-                    // 按资产类型分组
-                    val groupedAssets = assets.groupBy { asset ->
-                        AssetType.fromString(asset.type)
-                    }
-
-                    // 按AssetType枚举顺序显示分组
-                    val orderedAssetTypes = AssetType.entries
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        orderedAssetTypes.forEach { assetType ->
-                            val assetsInGroup = groupedAssets[assetType]
-                            if (!assetsInGroup.isNullOrEmpty()) {
-                                // 添加分组标题
-                                item {
-                                    val totalAmount = assetsInGroup.sumOf { getAssetValueInCny(it) }
-                                    AssetTypeHeader(assetType = assetType, totalAmount = totalAmount)
-                                }
-                                // 添加该分组的资产项
-                                items(assetsInGroup) { asset ->
-                                    AssetListItem(
-                                        asset = asset,
-                                        getValueInCny = getAssetValueInCny,
-                                        onClick = { selectedAsset = asset }
-                                    )
-                                }
-                                // 在分组之间添加一些间距
-                                item {
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                }
-                            }
-                        }
                     }
                 }
             }

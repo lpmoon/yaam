@@ -2,8 +2,7 @@ package com.lpmoon.asset.ui.config
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.runtime.*
-import com.lpmoon.asset.data.TaxSettings
+import com.lpmoon.asset.data.tax.TaxSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

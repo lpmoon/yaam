@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,9 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.AssetType
-import com.lpmoon.asset.data.CurrencyType
-import java.text.DecimalFormat
+import com.lpmoon.asset.data.asset.AssetType
+import com.lpmoon.asset.data.asset.CurrencyType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

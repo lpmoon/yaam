@@ -1,4 +1,4 @@
-package com.lpmoon.asset.data
+package com.lpmoon.asset.data.asset
 
 enum class AssetType(val displayName: String) {
     BANK_DEPOSIT("银行存款"),
