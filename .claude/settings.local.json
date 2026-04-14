@@ -15,7 +15,10 @@
       "Bash(./gradlew compileDebugKotlin)",
       "Bash(cd /d D:\\\\workspace\\\\android)",
       "Bash(./gradlew assembleDebug --quiet)",
-      "Bash(./gradlew installDebug --quiet)"
+      "Bash(./gradlew installDebug --quiet)",
+      "Bash(git checkout:*)",
+      "Bash(chmod +x:*)",
+      "Bash(./gradlew :app:assembleDebug --no-daemon --stacktrace)"
     ]
   }
 }
