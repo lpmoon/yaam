@@ -1,6 +1,5 @@
-package com.lpmoon.asset.util
+package com.lpmoon.asset.domain.usecase
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -8,72 +7,59 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
-import com.lpmoon.asset.data.asset.Asset
 import com.lpmoon.asset.data.asset.AssetType
-import com.lpmoon.asset.util.AssetSnapshotUtil.ALBUM_NAME
-import com.lpmoon.asset.util.AssetSnapshotUtil.IMAGE_WIDTH
-import java.io.OutputStream
+import com.lpmoon.asset.domain.model.Asset
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * 资产快照图片工具类。
- *
- * 采用原生 Canvas 绘制，将完整资产列表（不受屏幕/滚动限制）渲染成 Bitmap，
- * 再通过 MediaStore 保存到系统图库。
+ * 生成资产快照用例
+ * 负责将资产数据渲染为位图的业务逻辑
  */
-object AssetSnapshotUtil {
+class GenerateAssetSnapshotUseCase : UseCase<GenerateAssetSnapshotUseCase.Params, GenerateAssetSnapshotUseCase.Result> {
 
-    /** 图片保存的子目录名 */
-    private const val ALBUM_NAME = "资产管理"
+    data class Params(
+        val context: Context,
+        val assets: List<Asset>,
+        val totalAssets: Double,
+        val getAssetValueInCny: (Asset) -> Double
+    )
+
+    data class Result(
+        val success: Boolean,
+        val bitmap: Bitmap? = null,
+        val errorMessage: String? = null
+    )
 
     /** 图片宽度（px），约等于 1080p 屏幕宽度 */
-    private const val IMAGE_WIDTH = 1080
-
-    /** 内边距 */
-    private const val PADDING = 48f
-
-    /** 卡片圆角半径 */
-    private const val CORNER_RADIUS = 24f
-
-    /**
-     * 将完整资产数据渲染成 Bitmap 并保存到图库。
-     *
-     * 在主线程调用即可，不依赖任何 View/Compose，不受滚动截断影响。
-     *
-     * @param context            Context
-     * @param assets             所有资产
-     * @param totalAssets        总资产（人民币）
-     * @param getAssetValueInCny 将单个资产换算为人民币的函数
-     * @return 保存成功返回 true
-     */
-    fun renderAndSave(
-        context: Context,
-        assets: List<Asset>,
-        totalAssets: Double,
-        getAssetValueInCny: (Asset) -> Double
-    ): Boolean {
-        return try {
-            val bitmap = renderAssetsBitmap(context, assets, totalAssets, getAssetValueInCny)
-            val saved = saveBitmapToGallery(context, bitmap)
-            bitmap.recycle()
-            saved
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+    private companion object {
+        const val IMAGE_WIDTH = 1080
+        const val PADDING = 48f
+        const val CORNER_RADIUS = 24f
+        val fmt = DecimalFormat("#,##0.00")
     }
 
-    // -------------------------------------------------------------------------
-    // 私有：Canvas 绘制逻辑
-    // -------------------------------------------------------------------------
-
-    private val fmt = DecimalFormat("#,##0.00")
+    override suspend fun invoke(params: Params): Result {
+        return try {
+            val bitmap = renderAssetsBitmap(
+                context = params.context,
+                assets = params.assets,
+                totalAssets = params.totalAssets,
+                getAssetValueInCny = params.getAssetValueInCny
+            )
+            Result(
+                success = true,
+                bitmap = bitmap
+            )
+        } catch (e: Exception) {
+            Result(
+                success = false,
+                errorMessage = "生成资产快照失败: ${e.message}"
+            )
+        }
+    }
 
     /**
      * 用原生 Canvas API 绘制完整资产快照 Bitmap。
@@ -135,7 +121,8 @@ object AssetSnapshotUtil {
         val contentWidth = IMAGE_WIDTH - PADDING * 2   // 内容区宽度
 
         // ---- 第一遍：计算总高度 ----
-        val groupedAssets = assets.groupBy { AssetType.fromString(it.type) }
+        // 使用AssetType枚举进行分组
+        val groupedAssets = assets.groupBy { asset -> AssetType.fromString(asset.type) }
         val orderedTypes = AssetType.entries.filter { groupedAssets[it]?.isNotEmpty() == true }
 
         val cardHeight = PADDING + sp(14f) + sp(8f) + sp(28f) + PADDING  // 总资产卡片高度
@@ -229,59 +216,4 @@ object AssetSnapshotUtil {
 
         return bitmap
     }
-
-    // -------------------------------------------------------------------------
-    // 公共：保存到图库
-    // -------------------------------------------------------------------------
-
-    /**
-     * 将 Bitmap 通过 MediaStore 保存到 Pictures/[ALBUM_NAME] 目录。
-     * 兼容 Android 10（API 29）及以上，无需 WRITE_EXTERNAL_STORAGE 权限。
-     */
-    fun saveBitmapToGallery(context: Context, bitmap: Bitmap): Boolean {
-        val fileName = "asset_snapshot_${
-            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        }.png"
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(
-                    MediaStore.Images.Media.RELATIVE_PATH,
-                    "${Environment.DIRECTORY_PICTURES}/$ALBUM_NAME"
-                )
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
-        }
-
-        val resolver = context.contentResolver
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-
-        val uri = resolver.insert(collection, contentValues) ?: return false
-
-        var outputStream: OutputStream? = null
-        return try {
-            outputStream = resolver.openOutputStream(uri)
-            val saved = bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream!!)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                contentValues.clear()
-                contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-                resolver.update(uri, contentValues, null, null)
-            }
-            saved
-        } catch (e: Exception) {
-            e.printStackTrace()
-            resolver.delete(uri, null, null)
-            false
-        } finally {
-            outputStream?.close()
-        }
-    }
 }
-

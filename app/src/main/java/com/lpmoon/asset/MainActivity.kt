@@ -1,13 +1,19 @@
 package com.lpmoon.asset
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.lpmoon.asset.presentation.di.ViewModelFactory
+import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
 import com.lpmoon.asset.ui.asset.AssetListScreen
 import com.lpmoon.asset.ui.asset.AssetRankingScreen
 import com.lpmoon.asset.ui.config.ConfigurationScreen
@@ -15,7 +21,6 @@ import com.lpmoon.asset.ui.config.TaxSettingsScreen
 import com.lpmoon.asset.ui.config.ThemeSettingsScreen
 import com.lpmoon.asset.ui.tax.TaxCalculatorScreen
 import com.lpmoon.asset.ui.theme.资产管理Theme
-import com.lpmoon.asset.viewmodel.AssetViewModel
 
 sealed class Screen(val title: String) {
     data object AssetList : Screen("个人资产")
@@ -34,38 +39,53 @@ class MainActivity : AppCompatActivity() {
             资产管理Theme {
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.AssetList) }
 
-                val viewModel: AssetViewModel = viewModel(
-                    factory = viewModelFactory {
-                        initializer {
-                            AssetViewModel(this@MainActivity.applicationContext as android.app.Application)
-                        }
-                    }
-                )
+                // 使用新的ViewModel架构
+                val viewModelFactory = ViewModelFactory(application)
+                val newAssetViewModel = viewModelFactory.create(AssetListViewModel::class.java) as AssetListViewModel
 
                 when (currentScreen) {
                     is Screen.AssetList -> {
+                        val coroutineScope = rememberCoroutineScope()
                         AssetListScreen(
-                            assets = viewModel.assets.collectAsState().value,
-                            totalAssets = viewModel.totalAssets.collectAsState().value,
-                            exchangeRate = viewModel.exchangeRate.collectAsState().value,
-                            isLoadingExchangeRate = viewModel.isLoadingExchangeRate.collectAsState().value,
-                            onAddAsset = viewModel::addAsset,
-                            onUpdateAsset = viewModel::updateAsset,
-                            onDeleteAsset = viewModel::deleteAsset,
-                            getAssetValueInCny = viewModel::getAssetValueInCny,
-                            getAssetDisplayValue = viewModel::getAssetDisplayValue,
-                            onRefreshExchangeRate = viewModel::refreshExchangeRate,
-                            getAssetHistory = viewModel::getAssetHistory,
-                            getTotalAssetHistory = viewModel::getTotalAssetHistory,
-                            onExportAssets = viewModel::exportAssets,
-                            onImportAssets = viewModel::importAssets,
-                            generateDefaultFileName = viewModel::generateDefaultFileName,
-                            onClearAllAssets = viewModel::clearAllAssets,
-                            getAssetsAsJson = viewModel::getAssetsAsJson,
-                            onImportFromJson = viewModel::importFromJson,
+                            // 逐步迁移到新ViewModel
+                            assets = newAssetViewModel.assets.collectAsState().value,
+                            totalAssets = newAssetViewModel.totalAssets.collectAsState().value,
+                            exchangeRate = newAssetViewModel.exchangeRate.collectAsState().value,
+                            isLoadingExchangeRate = newAssetViewModel.isLoadingExchangeRate.collectAsState().value,
+                            // 第一步：先迁移添加资产功能到新架构
+                            onAddAsset = { name, value, currency, type ->
+                                newAssetViewModel.addAsset(name, value, currency, type)
+                            },
+                            onUpdateAsset = { assetId, name, value, currency, type ->
+                                newAssetViewModel.updateAsset(assetId, name, value, currency, type)
+                            },
+                            onDeleteAsset = { assetId ->
+                                newAssetViewModel.deleteAsset(assetId)
+                            },
+                            getAssetValueInCny = newAssetViewModel::getAssetValueInCny,
+                            getAssetDisplayValue = newAssetViewModel::getAssetDisplayValue,
+                            onRefreshExchangeRate = {
+                                newAssetViewModel.refreshExchangeRate()
+                            },
+                            getAssetHistory = newAssetViewModel::getAssetHistory,
+                            getTotalAssetHistory = newAssetViewModel::getTotalAssetHistory,
+                            onExportAssets = newAssetViewModel::exportAssets,
+                            onImportAssets = newAssetViewModel::importAssets,
+                            onGenerateAssetSnapshot = { context ->
+                                // 在协程中调用
+                                coroutineScope.launch {
+                                    val success = newAssetViewModel.generateAssetSnapshot(context)
+                                    val message = if (success) "资产截图已保存到相册" else "截图保存失败"
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            generateDefaultFileName = newAssetViewModel::generateDefaultFileName,
+                            onClearAllAssets = newAssetViewModel::clearAllAssets,
+                            getAssetsAsJson = newAssetViewModel::getAssetsAsJson,
+                            onImportFromJson = newAssetViewModel::importFromJson,
                             onSyncSuccess = {},
-                            generateSyncQrContent = viewModel::generateSyncQrContent,
-                            stopSyncServer = viewModel::stopSyncServer,
+                            generateSyncQrContent = newAssetViewModel::generateSyncQrContent,
+                            stopSyncServer = newAssetViewModel::stopSyncServer,
                             onNavigateToTaxCalculator = { currentScreen = Screen.TaxCalculator },
                             onNavigateToRanking = { currentScreen = Screen.Ranking },
                             onNavigateToConfiguration = { currentScreen = Screen.Configuration }
@@ -79,9 +99,9 @@ class MainActivity : AppCompatActivity() {
                     }
                     is Screen.Ranking -> {
                         AssetRankingScreen(
-                            assets = viewModel.assets.collectAsState().value,
-                            totalAssets = viewModel.totalAssets.collectAsState().value,
-                            getAssetValueInCny = viewModel::getAssetValueInCny,
+                            assets = newAssetViewModel.assets.collectAsState().value,
+                            totalAssets = newAssetViewModel.totalAssets.collectAsState().value,
+                            getAssetValueInCny = newAssetViewModel::getAssetValueInCny,
                             onBack = { currentScreen = Screen.AssetList },
                             onNavigateToConfiguration = { currentScreen = Screen.Configuration }
                         )

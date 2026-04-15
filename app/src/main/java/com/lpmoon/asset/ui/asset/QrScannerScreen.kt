@@ -19,7 +19,8 @@ import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import com.lpmoon.asset.data.asset.AssetImportExportService
+import com.lpmoon.asset.domain.model.ExportAsset
+import com.lpmoon.asset.domain.usecase.QRImportAssetsUseCase
 import com.lpmoon.asset.sync.AssetSyncClient
 import kotlinx.coroutines.launch
 
@@ -42,40 +43,38 @@ fun QrScannerScreen(
         errorMessage = null
 
         scope.launch {
-            // 解析二维码内容
-            val syncInfo = assetSyncClient.parseQrContent(qrContent)
-            if (syncInfo == null) {
-                errorMessage = "无效的二维码格式"
-                isLoading = false
-                Toast.makeText(context, "无效的二维码格式", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
+            try {
+                // 使用QRImportAssetsUseCase处理二维码
+                val qrImportUseCase = QRImportAssetsUseCase()
+                val result = qrImportUseCase(QRImportAssetsUseCase.Params(
+                    context = context,
+                    qrContent = qrContent
+                ))
 
-            // 下载资产数据
-            assetSyncClient.downloadAssets(syncInfo, object : AssetSyncClient.SyncCallback {
-                override fun onSuccess(assets: List<AssetImportExportService.ExportAsset>) {
+                if (result.success && result.importedAssets != null) {
                     // 转换为JSON
                     val gson = Gson()
-                    val json = gson.toJson(assets)
+                    val json = gson.toJson(result.importedAssets)
 
                     // 导入数据
                     val success = importFromJson(json)
                     if (success) {
-                        Toast.makeText(context, "成功导入 ${assets.size} 条资产", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "成功导入 ${result.importedAssets.size} 条资产", Toast.LENGTH_SHORT).show()
                         onSyncSuccess()
                     } else {
                         errorMessage = "导入数据失败"
                         Toast.makeText(context, "导入数据失败", Toast.LENGTH_SHORT).show()
                     }
-                    isLoading = false
+                } else {
+                    errorMessage = result.errorMessage ?: "无效的二维码格式"
+                    Toast.makeText(context, result.errorMessage ?: "无效的二维码格式", Toast.LENGTH_SHORT).show()
                 }
-
-                override fun onFailure(errorMsg: String) {
-                    errorMessage = errorMsg
-                    isLoading = false
-                    Toast.makeText(context, "同步失败: $errorMsg", Toast.LENGTH_SHORT).show()
-                }
-            })
+            } catch (e: Exception) {
+                errorMessage = "处理二维码时出错: ${e.message}"
+                Toast.makeText(context, "处理二维码时出错: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                isLoading = false
+            }
         }
     }
 

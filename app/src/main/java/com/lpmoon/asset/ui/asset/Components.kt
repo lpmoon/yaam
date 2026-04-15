@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -266,11 +267,13 @@ fun AssetSnapshotContent(
                         val totalAmount = assetsInGroup.sumOf { getAssetValueInCny(it) }
                         AssetTypeHeader(assetType = assetType, totalAmount = totalAmount)
                         assetsInGroup.forEach { asset ->
-                            AssetListItem(
-                                asset = asset,
-                                getValueInCny = getAssetValueInCny,
-                                onClick = { onAssetClick?.invoke(asset) }
-                            )
+                            key(asset.id) {
+                                AssetListItem(
+                                    asset = asset,
+                                    getValueInCny = getAssetValueInCny,
+                                    onClick = { onAssetClick?.invoke(asset) }
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                     }
