@@ -52,9 +52,18 @@ class QRImportAssetsUseCase : UseCase<QRImportAssetsUseCase.Params, QRImportAsse
                     val assets = gson.fromJson<List<com.lpmoon.asset.domain.model.ExportAsset>>(params.qrContent, type)
 
                     if (assets != null && assets.isNotEmpty()) {
+                        // 确保字段有默认值
+                        val validatedAssets = assets.map { asset ->
+                            com.lpmoon.asset.domain.model.ExportAsset(
+                                name = asset.name.ifEmpty { "" },
+                                type = asset.type.ifEmpty { "OTHER" },
+                                value = asset.value.ifEmpty { "0" },
+                                currency = asset.currency.ifEmpty { "CNY" }
+                            )
+                        }
                         return@withContext Result(
                             success = true,
-                            importedAssets = assets
+                            importedAssets = validatedAssets
                         )
                     }
                 } catch (e: Exception) {
@@ -69,11 +78,20 @@ class QRImportAssetsUseCase : UseCase<QRImportAssetsUseCase.Params, QRImportAsse
                     if (mapList != null && mapList.isNotEmpty()) {
                         val assets = mapList.mapNotNull { map ->
                             try {
+                                val name = map["name"] as? String ?: ""
+                                val type = map["type"] as? String ?: "OTHER"
+                                val value = map["value"] as? String ?: map["value"]?.toString() ?: "0"
+                                // 安全处理currency，处理JsonNull情况
+                                val currency = when (val c = map["currency"]) {
+                                    is String -> c
+                                    is com.google.gson.JsonPrimitive -> c.asString
+                                    else -> "CNY"
+                                }
                                 com.lpmoon.asset.domain.model.ExportAsset(
-                                    name = map["name"] as? String ?: "",
-                                    type = map["type"] as? String ?: "OTHER",
-                                    value = map["value"] as? String ?: map["value"]?.toString() ?: "0",
-                                    currency = map["currency"] as? String ?: "CNY"
+                                    name = name,
+                                    type = type,
+                                    value = value,
+                                    currency = currency
                                 )
                             } catch (e: Exception) {
                                 null

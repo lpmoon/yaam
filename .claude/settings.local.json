@@ -21,7 +21,24 @@
       "Bash(./gradlew :app:assembleDebug --no-daemon --stacktrace)",
       "Bash(./gradlew :app:compileDebugKotlin --no-daemon)",
       "Bash(./gradlew :app:build --no-daemon)",
-      "Bash(./gradlew :app:assembleDebug --no-daemon)"
+      "Bash(./gradlew :app:assembleDebug --no-daemon)",
+      "Bash(./gradlew :app:compileDebugUnitTestSources)",
+      "Bash(./gradlew :app:testDebugUnitTest)",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*.EvaluateExpressionUseCaseTest\")",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*.FileImportAssetsUseCaseTest\")",
+      "Bash(./gradlew :app:compileDebugUnitTestSources --rerun-tasks)",
+      "Bash(timeout 30 ./gradlew :app:testDebugUnitTest --continue)",
+      "Bash(cp \"app/src/test/java/com/lpmoon/asset/domain/usecase/GenerateAssetSnapshotUseCaseTest.kt\" \"app/src/androidTest/java/com/lpmoon/asset/domain/usecase/\")",
+      "Bash(rm \"app/src/test/java/com/lpmoon/asset/domain/usecase/GenerateAssetSnapshotUseCaseTest.kt\")",
+      "Bash(cp \"app/src/test/java/com/lpmoon/asset/domain/usecase/QRImportAssetsUseCaseTest.kt\" \"app/src/androidTest/java/com/lpmoon/asset/domain/usecase/\")",
+      "Bash(rm \"app/src/test/java/com/lpmoon/asset/domain/usecase/QRImportAssetsUseCaseTest.kt\")",
+      "Bash(./gradlew :app:compileDebugAndroidTestSources)",
+      "Bash(./gradlew :app:connectedAndroidTest)",
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin)",
+      "Bash(./gradlew :app:assembleDebugAndroidTest)",
+      "Bash(./gradlew :app:clean)",
+      "Bash(./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)"
     ]
   }
 }

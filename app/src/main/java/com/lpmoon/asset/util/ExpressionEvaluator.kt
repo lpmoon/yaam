@@ -47,6 +47,11 @@ object ExpressionEvaluator {
                 c.isDigit() || c == '.' || (c == '-' && (i == 0 || expression[i - 1] == '(')) -> {
                     // 数字（包括负数和小数）
                     val numStart = i
+                    // 如果是负号，先跳过负号
+                    if (c == '-') {
+                        i++
+                    }
+                    // 收集数字和小数点
                     while (i < expression.length &&
                         (expression[i].isDigit() || expression[i] == '.')) {
                         i++
