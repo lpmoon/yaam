@@ -53,8 +53,8 @@ class FileImportAssetsUseCase : UseCase<FileImportAssetsUseCase.Params, FileImpo
                     id = 0, // 新ID，由Repository分配
                     name = exportAsset.name,
                     value = exportAsset.value,
-                    currency = exportAsset.currency ?: "CNY",
-                    type = exportAsset.type ?: "OTHER"
+                    currency = (exportAsset.currency?.takeIf { it.isNotBlank() }) ?: "CNY",
+                    type = (exportAsset.type?.takeIf { it.isNotBlank() }) ?: "OTHER"
                 )
             }
 

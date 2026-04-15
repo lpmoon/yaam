@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -36,6 +37,8 @@ import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -110,6 +113,7 @@ fun AssetListScreen(
     var showQrActionDialog by remember { mutableStateOf(false) }
     var showImportExportHelp by remember { mutableStateOf(false) }
     var showQrSyncHelp by remember { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -135,7 +139,7 @@ fun AssetListScreen(
         }
     }
 
-    // 当资产列表更新时，更新选中的资产
+    // 当资产列表更新时，更新选中的资产5898
     LaunchedEffect(assets) {
         if (selectedAsset != null) {
             val updatedAsset = assets.find { it.id == selectedAsset!!.id }
@@ -170,6 +174,7 @@ fun AssetListScreen(
                     title = { Text("个人资产管理") },
                     actions = {
                         Row {
+                            // 主要按钮：新增资产、汇率、导入导出
                             IconButton(
                                 onClick = { showAddDialog = true },
                                 modifier = Modifier.size(36.dp)
@@ -188,26 +193,49 @@ fun AssetListScreen(
                             ) {
                                 Icon(Icons.Default.Share, contentDescription = "导入导出")
                             }
-                            IconButton(
-                                onClick = { showQrActionDialog = true },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(Icons.Default.QrCode, contentDescription = "二维码")
-                            }
-                            // 截图保存按钮：Canvas 离屏渲染完整内容，不受滚动截断影响
-                            IconButton(
-                                onClick = {
-                                    onGenerateAssetSnapshot(context)
-                                },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = "保存资产截图")
-                            }
-                            IconButton(
-                                onClick = { showClearConfirmationDialog = true },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = "清空所有资产")
+                            // 更多按钮，点击显示下拉菜单
+                            Box {
+                                IconButton(
+                                    onClick = { showMoreMenu = true },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                                }
+                                DropdownMenu(
+                                    expanded = showMoreMenu,
+                                    onDismissRequest = { showMoreMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("二维码") },
+                                        onClick = {
+                                            showQrActionDialog = true
+                                            showMoreMenu = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.QrCode, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("保存资产截图") },
+                                        onClick = {
+                                            onGenerateAssetSnapshot(context)
+                                            showMoreMenu = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("清空所有资产") },
+                                        onClick = {
+                                            showClearConfirmationDialog = true
+                                            showMoreMenu = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Delete, contentDescription = null)
+                                        }
+                                    )
+                                }
                             }
                         }
                     },
