@@ -32,7 +32,13 @@
       "Bash(rm \"app/src/test/java/com/lpmoon/asset/domain/usecase/GenerateAssetSnapshotUseCaseTest.kt\")",
       "Bash(cp \"app/src/test/java/com/lpmoon/asset/domain/usecase/QRImportAssetsUseCaseTest.kt\" \"app/src/androidTest/java/com/lpmoon/asset/domain/usecase/\")",
       "Bash(rm \"app/src/test/java/com/lpmoon/asset/domain/usecase/QRImportAssetsUseCaseTest.kt\")",
-      "Bash(./gradlew :app:compileDebugAndroidTestSources)"
+      "Bash(./gradlew :app:compileDebugAndroidTestSources)",
+      "Bash(./gradlew :app:connectedAndroidTest)",
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin)",
+      "Bash(./gradlew :app:assembleDebugAndroidTest)",
+      "Bash(./gradlew :app:clean)",
+      "Bash(./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)"
     ]
   }
 }

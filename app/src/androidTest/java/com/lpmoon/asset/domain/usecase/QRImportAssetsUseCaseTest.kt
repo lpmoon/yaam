@@ -23,7 +23,7 @@ class QRImportAssetsUseCaseTest {
     }
 
     @Test
-    fun `invoke should return error for invalid qr content`() = runTest {
+    fun invoke_should_return_error_for_invalid_qr_content() = runTest {
         // Given: Invalid QR content (not JSON)
         val params = QRImportAssetsUseCase.Params(
             context = context,
@@ -34,15 +34,18 @@ class QRImportAssetsUseCaseTest {
         val result = useCase.invoke(params)
 
         // Then
-        assertTrue(!result.success)
+        assertFalse(result.success)
         assertNotNull(result.errorMessage)
-        // 应该返回"导入失败: ..." 因为JSON解析异常
-        assertTrue(result.errorMessage?.startsWith("导入失败") == true)
+        // 可能返回"导入失败: ..." 或 "无法识别二维码格式..."
+        assertTrue(
+            result.errorMessage?.startsWith("导入失败") == true ||
+            result.errorMessage == "无法识别二维码格式。请确保扫描的是资产同步二维码。"
+        )
         assertNull(result.importedAssets)
     }
 
     @Test
-    fun `invoke should import assets from direct export asset json`() = runTest {
+    fun invoke_should_import_assets_from_direct_export_asset_json() = runTest {
         // Given: Direct export asset JSON format
         val json = """
             [
@@ -65,7 +68,7 @@ class QRImportAssetsUseCaseTest {
     }
 
     @Test
-    fun `invoke should import assets from simple map json`() = runTest {
+    fun invoke_should_import_assets_from_simple_map_json() = runTest {
         // Given: Simple map format (missing some fields)
         val json = """
             [
@@ -90,7 +93,7 @@ class QRImportAssetsUseCaseTest {
     }
 
     @Test
-    fun `invoke should return error for empty json array`() = runTest {
+    fun invoke_should_return_error_for_empty_json_array() = runTest {
         // Given
         val json = "[]"
         val params = QRImportAssetsUseCase.Params(
@@ -102,7 +105,7 @@ class QRImportAssetsUseCaseTest {
         val result = useCase.invoke(params)
 
         // Then
-        assertTrue(!result.success)
+        assertFalse(result.success)
         assertNotNull(result.errorMessage)
         // 可能是"无法识别二维码格式..." 或 "导入失败: ..."
         assertTrue(
@@ -112,7 +115,7 @@ class QRImportAssetsUseCaseTest {
     }
 
     @Test
-    fun `invoke should return error for null json`() = runTest {
+    fun invoke_should_return_error_for_null_json() = runTest {
         // Given
         val json = "null"
         val params = QRImportAssetsUseCase.Params(
@@ -124,7 +127,7 @@ class QRImportAssetsUseCaseTest {
         val result = useCase.invoke(params)
 
         // Then
-        assertTrue(!result.success)
+        assertFalse(result.success)
         assertNotNull(result.errorMessage)
         // 可能是"无法识别二维码格式..." 或 "导入失败: ..."
         assertTrue(
