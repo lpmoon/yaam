@@ -65,10 +65,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.asset.Asset
-import com.lpmoon.asset.data.asset.AssetHistory
-import com.lpmoon.asset.data.asset.ExchangeRate
-import com.lpmoon.asset.data.asset.TimeDimension
+import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.model.AssetHistory
+import com.lpmoon.asset.domain.model.ExchangeRate
+import com.lpmoon.asset.domain.model.TimeDimension
 import com.lpmoon.asset.sync.AssetSyncClient
 import java.text.DecimalFormat
 

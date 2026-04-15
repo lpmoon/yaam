@@ -7,7 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
-import com.lpmoon.asset.data.asset.AssetType
+import com.lpmoon.asset.domain.model.AssetType
 import com.lpmoon.asset.domain.model.Asset
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat

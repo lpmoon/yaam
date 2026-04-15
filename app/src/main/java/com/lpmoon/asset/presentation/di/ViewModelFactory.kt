@@ -5,14 +5,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.lpmoon.asset.data.local.AssetLocalDataSource
 import com.lpmoon.asset.data.local.ExchangeRateLocalDataSource
-import com.lpmoon.asset.data.mapper.AssetMapper
+import com.lpmoon.asset.data.local.room.AppDatabase
 import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
 import com.lpmoon.asset.data.repository.AssetRepositoryImpl
 import com.lpmoon.asset.data.repository.ExchangeRateRepositoryImpl
-import com.lpmoon.asset.domain.usecase.*
-import com.lpmoon.asset.util.FileIoService
-import com.lpmoon.asset.sync.AssetSyncServer
+import com.lpmoon.asset.domain.usecase.AddAssetUseCase
+import com.lpmoon.asset.domain.usecase.AddTotalAssetSnapshotUseCase
+import com.lpmoon.asset.domain.usecase.CalculateAssetHistoryUseCase
+import com.lpmoon.asset.domain.usecase.CalculateTotalAssetsUseCase
+import com.lpmoon.asset.domain.usecase.ClearAllAssetsUseCase
+import com.lpmoon.asset.domain.usecase.DeleteAssetUseCase
+import com.lpmoon.asset.domain.usecase.FileExportAssetsUseCase
+import com.lpmoon.asset.domain.usecase.FileImportAssetsUseCase
+import com.lpmoon.asset.domain.usecase.GenerateAssetSnapshotUseCase
+import com.lpmoon.asset.domain.usecase.GetAllAssetsUseCase
+import com.lpmoon.asset.domain.usecase.GetAssetHistoryUseCase
+import com.lpmoon.asset.domain.usecase.GetExchangeRateUseCase
+import com.lpmoon.asset.domain.usecase.RefreshExchangeRateUseCase
+import com.lpmoon.asset.domain.usecase.SaveAssetsUseCase
+import com.lpmoon.asset.domain.usecase.UpdateAssetUseCase
 import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
+import com.lpmoon.asset.sync.AssetSyncServer
+import com.lpmoon.asset.util.FileIoService
 
 /**
  * ViewModel工厂，用于手动构造依赖
@@ -28,14 +42,22 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
     }
 
     private fun createAssetListViewModel(): AssetListViewModel {
-        // 创建数据源
-        val assetLocalDataSource = AssetLocalDataSource(application)
-        val exchangeRateLocalDataSource = ExchangeRateLocalDataSource(application)
+        // 创建 Room 数据库实例
+        val database = AppDatabase.getInstance(application)
+
+        // 创建数据源（Room 实现）
+        val assetLocalDataSource = AssetLocalDataSource(
+            assetDao = database.assetDao(),
+            assetHistoryDao = database.assetHistoryDao(),
+            totalAssetSnapshotDao = database.totalAssetSnapshotDao()
+        )
+        val exchangeRateLocalDataSource = ExchangeRateLocalDataSource(
+            exchangeRateDao = database.exchangeRateDao()
+        )
         val exchangeRateApiDataSource = ExchangeRateApiDataSource()
-        val assetMapper = AssetMapper()
 
         // 创建Repository
-        val assetRepository = AssetRepositoryImpl(assetLocalDataSource, assetMapper)
+        val assetRepository = AssetRepositoryImpl(assetLocalDataSource)
         val exchangeRateRepository = ExchangeRateRepositoryImpl(
             exchangeRateLocalDataSource,
             exchangeRateApiDataSource

@@ -54,7 +54,7 @@ class AddAssetUseCaseTest {
                 assertEquals("Cash", asset.type)
             })
             assetRepository.addAssetHistory(withArg { history ->
-                assertEquals(OperationType.CREATE.name, history.operationType)
+                assertEquals(OperationType.CREATE, history.operationType)
                 assertEquals("", history.oldValue)
                 assertEquals("1000", history.newValue)
             })
@@ -119,7 +119,7 @@ class AddAssetUseCaseTest {
         // Then
         coVerify {
             assetRepository.addAssetHistory(withArg { history ->
-                assertEquals(OperationType.CREATE.name, history.operationType)
+                assertEquals(OperationType.CREATE, history.operationType)
                 assert(history.id > 0) // timestamp should be positive
             })
         }

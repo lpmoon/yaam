@@ -56,7 +56,7 @@ class UpdateAssetUseCase(
             assetId = params.assetId,
             oldValue = oldAsset.value,
             newValue = params.value,
-            operationType = OperationType.UPDATE.name
+            operationType = OperationType.UPDATE
 
         )
 

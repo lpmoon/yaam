@@ -1,7 +1,7 @@
 package com.lpmoon.asset.domain.usecase
 
 import com.google.gson.Gson
-import com.lpmoon.asset.data.asset.Asset
+import com.lpmoon.asset.domain.model.Asset
 import com.lpmoon.asset.sync.AssetSyncServer
 
 /**

@@ -65,7 +65,7 @@ class UpdateAssetUseCaseTest {
                 assertEquals(1L, history.assetId)
                 assertEquals("1000", history.oldValue)
                 assertEquals("1500", history.newValue)
-                assertEquals(OperationType.UPDATE.name, history.operationType)
+                assertEquals(OperationType.UPDATE, history.operationType)
             })
         }
     }
@@ -166,7 +166,7 @@ class UpdateAssetUseCaseTest {
         coVerify {
             assetRepository.addAssetHistory(withArg { history ->
                 assert(history.id > 0) // timestamp
-                assertEquals(OperationType.UPDATE.name, history.operationType)
+                assertEquals(OperationType.UPDATE, history.operationType)
             })
         }
     }

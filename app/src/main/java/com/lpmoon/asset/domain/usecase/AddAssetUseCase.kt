@@ -47,7 +47,7 @@ class AddAssetUseCase(
             assetId = newAsset.id,
             oldValue = "",
             newValue = newAsset.value,
-            operationType = OperationType.CREATE.name
+            operationType = OperationType.CREATE
         )
         assetRepository.addAssetHistory(history)
     }

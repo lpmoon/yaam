@@ -18,7 +18,7 @@ data class AssetHistory(
     val oldValue: String,
     val newValue: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val operationType: String = "UPDATE"
+    val operationType: OperationType = OperationType.UPDATE
 ) {
     fun getFormattedTime(): String {
         val sdf = SimpleDateFormat("yyyy年MM月dd日 HH:mm", Locale.CHINA)
@@ -28,10 +28,9 @@ data class AssetHistory(
     fun getDescription(): String {
         val time = getFormattedTime()
         return when (operationType) {
-            "CREATE" -> "$time 创建资产，初始值为 $newValue"
-            "UPDATE" -> "$time 将资产值从 $oldValue 修改为 $newValue"
-            "DELETE" -> "$time 删除资产，最后值为 $oldValue"
-            else -> "$time 操作资产"
+            OperationType.CREATE -> "$time 创建资产，初始值为 $newValue"
+            OperationType.UPDATE -> "$time 将资产值从 $oldValue 修改为 $newValue"
+            OperationType.DELETE -> "$time 删除资产，最后值为 $oldValue"
         }
     }
 }

@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.asset.AssetType
-import com.lpmoon.asset.data.asset.CurrencyType
+import com.lpmoon.asset.domain.model.AssetType
+import com.lpmoon.asset.domain.model.CurrencyType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
