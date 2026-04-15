@@ -12,7 +12,16 @@ class DeleteAssetUseCase(
 
     override suspend fun invoke(assetId: Long) {
         val currentAssets = assetRepository.getAllAssets().first()
-        val updatedAssets = currentAssets.filter { it.id != assetId }
+        // 只删除第一个匹配的资产（防止ID重复时删除多个资产）
+        var deleted = false
+        val updatedAssets = currentAssets.filter { asset ->
+            if (!deleted && asset.id == assetId) {
+                deleted = true
+                false // 不包含这个资产
+            } else {
+                true // 包含其他资产
+            }
+        }
 
         // 保存更新后的资产列表
         assetRepository.saveAssets(updatedAssets)

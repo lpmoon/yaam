@@ -27,9 +27,11 @@ class AssetListViewModel(
     private val getExchangeRateUseCase: GetExchangeRateUseCase,
     private val clearAllAssetsUseCase: ClearAllAssetsUseCase,
     private val saveAssetsUseCase: SaveAssetsUseCase,
-    private val exportAssetsUseCase: ExportAssetsUseCase,
-    private val importAssetsUseCase: ImportAssetsUseCase,
-    private val assetImportExportService: com.lpmoon.asset.util.AssetImportExportService,
+    private val exportAssetsUseCase: FileExportAssetsUseCase,
+    private val importAssetsUseCase: FileImportAssetsUseCase,
+    private val generateAssetSnapshotUseCase: GenerateAssetSnapshotUseCase,
+    private val addTotalAssetSnapshotUseCase: AddTotalAssetSnapshotUseCase,
+    private val fileIoService: com.lpmoon.asset.util.FileIoService,
     private val assetSyncServer: com.lpmoon.asset.sync.AssetSyncServer
 ) : AndroidViewModel(application) {
 
@@ -121,6 +123,13 @@ class AssetListViewModel(
                     type = type
                 )
             )
+            // 计算当前总资产并添加快照
+            try {
+                val currentTotal = calculateTotalAssetsUseCase().first()
+                addTotalAssetSnapshotUseCase(currentTotal)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -135,12 +144,26 @@ class AssetListViewModel(
                     type = type
                 )
             )
+            // 计算当前总资产并添加快照
+            try {
+                val currentTotal = calculateTotalAssetsUseCase().first()
+                addTotalAssetSnapshotUseCase(currentTotal)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun deleteAsset(assetId: Long) {
         viewModelScope.launch {
             deleteAssetUseCase(assetId)
+            // 计算当前总资产并添加快照
+            try {
+                val currentTotal = calculateTotalAssetsUseCase().first()
+                addTotalAssetSnapshotUseCase(currentTotal)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -210,73 +233,59 @@ class AssetListViewModel(
     }
 
     fun exportAssets(uri: android.net.Uri): Boolean {
-        // 将数据层资产转换为领域层资产
-        val domainAssets = _assets.value.map { it.toDomain() }
-
-        val exportResult = exportAssetsUseCase(
-            ExportAssetsUseCase.Params(
-                assets = domainAssets,
-                exportInfo = ExportAssetsUseCase.ExportInfo(
-                    fileName = null // 使用默认文件名
-                )
-            )
-        )
-        return if (exportResult.success && exportResult.exportData != null) {
-            // 使用AssetImportExportService将数据写入Uri（平台特定操作）
-            // 这里需要将JSON字符串写入Uri
+        return kotlinx.coroutines.runBlocking {
             try {
-                val jsonBytes = exportResult.exportData.data.toByteArray()
-                getApplication<android.app.Application>().contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    outputStream.write(jsonBytes)
-                    outputStream.flush()
-                    true
-                } ?: false
+                // 将数据层资产转换为领域层资产
+                val domainAssets = _assets.value.map { it.toDomain() }
+
+                val exportResult = exportAssetsUseCase(
+                    FileExportAssetsUseCase.Params(
+                        assets = domainAssets,
+                        exportInfo = FileExportAssetsUseCase.ExportInfo(
+                            fileName = null // 使用默认文件名
+                        )
+                    )
+                )
+                if (exportResult.success && exportResult.exportData != null) {
+                    // 使用FileIoService将数据写入Uri（平台特定操作）
+                    fileIoService.writeJsonToUri(exportResult.exportData.data, uri)
+                } else {
+                    false
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
             }
-        } else {
-            false
         }
     }
 
     fun importAssets(uri: android.net.Uri): Boolean {
-        // 使用AssetImportExportService读取JSON字符串（平台特定操作）
-        val importedDataJson = assetImportExportService.readAssetsJsonFromUri(uri)
-        if (importedDataJson == null) {
-            // 如果无法读取JSON，尝试使用旧的导入方法（向后兼容）
-            val importedAssets = assetImportExportService.importAssetsFromUri(uri)
-            return if (importedAssets != null) {
-                // 将数据层资产转换为领域层资产
-                val domainAssets = importedAssets.map { dataAsset ->
-                    com.lpmoon.asset.domain.model.Asset(
-                        id = dataAsset.id,
-                        name = dataAsset.name,
-                        value = dataAsset.value,
-                        currency = dataAsset.currency,
-                        type = dataAsset.type
-                    )
+        return kotlinx.coroutines.runBlocking {
+            try {
+                // 使用FileIoService读取JSON字符串（平台特定操作）
+                val importedDataJson = fileIoService.readJsonFromUri(uri)
+                if (importedDataJson == null) {
+                    return@runBlocking false
                 }
-                handleImportedAssets(domainAssets)
-                true
-            } else {
+
+                // 使用ImportAssetsUseCase处理导入逻辑（业务逻辑）
+                val importResult = importAssetsUseCase(
+                    FileImportAssetsUseCase.Params(
+                        importData = importedDataJson,
+                        importInfo = FileImportAssetsUseCase.ImportInfo()
+                    )
+                )
+
+                return@runBlocking if (importResult.success && importResult.importedAssets != null) {
+                    handleImportedAssets(importResult.importedAssets)
+                    true
+                } else {
+                    false
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
                 false
             }
-        }
-
-        // 使用ImportAssetsUseCase处理导入逻辑（业务逻辑）
-        val importResult = importAssetsUseCase(
-            ImportAssetsUseCase.Params(
-                importData = importedDataJson,
-                importInfo = ImportAssetsUseCase.ImportInfo()
-            )
-        )
-
-        return if (importResult.success && importResult.importedAssets != null) {
-            handleImportedAssets(importResult.importedAssets)
-            true
-        } else {
-            false
         }
     }
 
@@ -288,17 +297,31 @@ class AssetListViewModel(
         viewModelScope.launch {
             // 保存到Repository
             saveAssetsUseCase(domainAssets)
+
+            // 计算当前总资产并添加快照
+            try {
+                val currentTotal = calculateTotalAssetsUseCase().first()
+                addTotalAssetSnapshotUseCase(currentTotal)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun generateDefaultFileName(): String {
-        return assetImportExportService.generateDefaultFileName()
+        return fileIoService.generateDefaultFileName()
     }
 
     fun clearAllAssets() {
         viewModelScope.launch {
             clearAllAssetsUseCase()
             _assets.value = emptyList()
+            // 添加快照（总资产为0）
+            try {
+                addTotalAssetSnapshotUseCase(0.0)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -308,17 +331,49 @@ class AssetListViewModel(
     }
 
     fun importFromJson(json: String): Boolean {
-        // 使用ImportAssetsUseCase处理导入逻辑（业务逻辑）
-        val importResult = importAssetsUseCase(
-            ImportAssetsUseCase.Params(
-                importData = json,
-                importInfo = ImportAssetsUseCase.ImportInfo()
+        return kotlinx.coroutines.runBlocking {
+            try {
+                // 使用ImportAssetsUseCase处理导入逻辑（业务逻辑）
+                val importResult = importAssetsUseCase(
+                    FileImportAssetsUseCase.Params(
+                        importData = json,
+                        importInfo = FileImportAssetsUseCase.ImportInfo()
+                    )
+                )
+
+                return@runBlocking if (importResult.success && importResult.importedAssets != null) {
+                    handleImportedAssets(importResult.importedAssets)
+                    true
+                } else {
+                    false
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    suspend fun generateAssetSnapshot(context: android.content.Context): Boolean {
+        // 将数据层资产转换为领域层资产
+        val domainAssets = _assets.value.map { it.toDomain() }
+
+        val snapshotResult = generateAssetSnapshotUseCase(
+            GenerateAssetSnapshotUseCase.Params(
+                context = context,
+                assets = domainAssets,
+                totalAssets = _totalAssets.value,
+                getAssetValueInCny = { asset ->
+                    // 使用ViewModel中的转换逻辑
+                    val evaluatedValue = com.lpmoon.asset.util.ExpressionEvaluator.evaluate(asset.value)
+                    convertCurrency(evaluatedValue, asset.currency, exchangeRate.value)
+                }
             )
         )
 
-        return if (importResult.success && importResult.importedAssets != null) {
-            handleImportedAssets(importResult.importedAssets)
-            true
+        return if (snapshotResult.success && snapshotResult.bitmap != null) {
+            // 使用FileIoService保存位图到图库
+            fileIoService.saveBitmapToGallery(snapshotResult.bitmap)
         } else {
             false
         }

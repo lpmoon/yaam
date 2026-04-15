@@ -67,7 +67,6 @@ import com.lpmoon.asset.data.asset.AssetHistory
 import com.lpmoon.asset.data.asset.ExchangeRate
 import com.lpmoon.asset.data.asset.TimeDimension
 import com.lpmoon.asset.sync.AssetSyncClient
-import com.lpmoon.asset.util.AssetSnapshotUtil
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +86,7 @@ fun AssetListScreen(
     getTotalAssetHistory: (TimeDimension) -> List<Pair<String, Double>> = { emptyList() },
     onExportAssets: (Uri) -> Boolean,
     onImportAssets: (Uri) -> Boolean,
+    onGenerateAssetSnapshot: (android.content.Context) -> Unit = { _ -> },
     generateDefaultFileName: () -> String = { "assets_export.json" },
     onClearAllAssets: () -> Unit = {},
     getAssetsAsJson: () -> String = { "" },
@@ -197,14 +197,7 @@ fun AssetListScreen(
                             // 截图保存按钮：Canvas 离屏渲染完整内容，不受滚动截断影响
                             IconButton(
                                 onClick = {
-                                    val success = AssetSnapshotUtil.renderAndSave(
-                                        context,
-                                        assets,
-                                        totalAssets,
-                                        getAssetValueInCny
-                                    )
-                                    val message = if (success) "资产截图已保存到相册" else "截图保存失败"
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    onGenerateAssetSnapshot(context)
                                 },
                                 modifier = Modifier.size(36.dp)
                             ) {

@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Base64
 import com.google.gson.Gson
 import com.lpmoon.asset.data.asset.Asset
-import com.lpmoon.asset.util.AssetImportExportService
+import com.lpmoon.asset.domain.model.ExportAsset
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -53,7 +53,7 @@ class AssetSyncServer(private val context: Context) {
 
             // 准备资产数据
             val exportData = assets.map { asset ->
-                AssetImportExportService.ExportAsset(
+                ExportAsset(
                     name = asset.name,
                     type = asset.type,
                     value = asset.value,

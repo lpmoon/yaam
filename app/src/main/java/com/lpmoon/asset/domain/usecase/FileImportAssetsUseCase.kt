@@ -1,12 +1,13 @@
 package com.lpmoon.asset.domain.usecase
 
 import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.model.ExportAsset
 
 /**
- * 导入资产用例
+ * 文件导入资产用例
  * 负责处理导入资产数据的业务逻辑
  */
-class ImportAssetsUseCase : UseCase<ImportAssetsUseCase.Params, ImportAssetsUseCase.Result> {
+class FileImportAssetsUseCase : UseCase<FileImportAssetsUseCase.Params, FileImportAssetsUseCase.Result> {
 
     data class Params(
         // 导入数据（JSON字符串）
@@ -68,11 +69,4 @@ class ImportAssetsUseCase : UseCase<ImportAssetsUseCase.Params, ImportAssetsUseC
             )
         }
     }
-
-    data class ExportAsset(
-        val name: String,
-        val type: String? = null,
-        val value: String,
-        val currency: String? = null
-    )
 }

@@ -1,10 +1,14 @@
 package com.lpmoon.asset
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -41,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
                 when (currentScreen) {
                     is Screen.AssetList -> {
+                        val coroutineScope = rememberCoroutineScope()
                         AssetListScreen(
                             // 逐步迁移到新ViewModel
                             assets = newAssetViewModel.assets.collectAsState().value,
@@ -66,6 +71,14 @@ class MainActivity : AppCompatActivity() {
                             getTotalAssetHistory = newAssetViewModel::getTotalAssetHistory,
                             onExportAssets = newAssetViewModel::exportAssets,
                             onImportAssets = newAssetViewModel::importAssets,
+                            onGenerateAssetSnapshot = { context ->
+                                // 在协程中调用
+                                coroutineScope.launch {
+                                    val success = newAssetViewModel.generateAssetSnapshot(context)
+                                    val message = if (success) "资产截图已保存到相册" else "截图保存失败"
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             generateDefaultFileName = newAssetViewModel::generateDefaultFileName,
                             onClearAllAssets = newAssetViewModel::clearAllAssets,
                             getAssetsAsJson = newAssetViewModel::getAssetsAsJson,

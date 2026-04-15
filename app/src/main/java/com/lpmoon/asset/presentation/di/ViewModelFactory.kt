@@ -10,7 +10,7 @@ import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
 import com.lpmoon.asset.data.repository.AssetRepositoryImpl
 import com.lpmoon.asset.data.repository.ExchangeRateRepositoryImpl
 import com.lpmoon.asset.domain.usecase.*
-import com.lpmoon.asset.util.AssetImportExportService
+import com.lpmoon.asset.util.FileIoService
 import com.lpmoon.asset.sync.AssetSyncServer
 import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
 
@@ -56,9 +56,11 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
         val getExchangeRateUseCase = GetExchangeRateUseCase(exchangeRateRepository)
         val clearAllAssetsUseCase = ClearAllAssetsUseCase(assetRepository)
         val saveAssetsUseCase = SaveAssetsUseCase(assetRepository)
-        val exportAssetsUseCase = ExportAssetsUseCase()
-        val importAssetsUseCase = ImportAssetsUseCase()
-        val assetImportExportService = AssetImportExportService(application)
+        val exportAssetsUseCase = FileExportAssetsUseCase()
+        val importAssetsUseCase = FileImportAssetsUseCase()
+        val generateAssetSnapshotUseCase = GenerateAssetSnapshotUseCase()
+        val addTotalAssetSnapshotUseCase = AddTotalAssetSnapshotUseCase(assetRepository)
+        val fileIoService = FileIoService(application)
         val assetSyncServer = AssetSyncServer(application)
 
         return AssetListViewModel(
@@ -74,7 +76,11 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
             getExchangeRateUseCase = getExchangeRateUseCase,
             clearAllAssetsUseCase = clearAllAssetsUseCase,
             saveAssetsUseCase = saveAssetsUseCase,
-            assetImportExportService = assetImportExportService,
+            exportAssetsUseCase = exportAssetsUseCase,
+            importAssetsUseCase = importAssetsUseCase,
+            generateAssetSnapshotUseCase = generateAssetSnapshotUseCase,
+            addTotalAssetSnapshotUseCase = addTotalAssetSnapshotUseCase,
+            fileIoService = fileIoService,
             assetSyncServer = assetSyncServer
         )
     }

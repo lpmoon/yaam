@@ -8,6 +8,7 @@ import com.lpmoon.asset.domain.model.TotalAssetSnapshot
 import com.lpmoon.asset.domain.repository.AssetRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 /**
  * 资产仓库实现
@@ -17,39 +18,35 @@ class AssetRepositoryImpl(
     private val mapper: AssetMapper
 ) : AssetRepository {
 
-    override fun getAllAssets(): Flow<List<Asset>> = flow {
-        val dataAssets = localDataSource.getAllAssets()
-        val domainAssets = mapper.mapAssetsToDomain(dataAssets)
-        emit(domainAssets)
-    }
+    override fun getAllAssets(): Flow<List<Asset>> =
+        localDataSource.getAllAssetsFlow().map { dataAssets ->
+            mapper.mapAssetsToDomain(dataAssets)
+        }
 
     override suspend fun saveAssets(assets: List<Asset>) {
         val dataAssets = mapper.mapAssetsToData(assets)
         localDataSource.saveAssets(dataAssets)
     }
 
-    override fun getAssetHistory(assetId: Long): Flow<List<AssetHistory>> = flow {
-        val dataHistories = localDataSource.getAssetHistory(assetId)
-        val domainHistories = mapper.mapHistoriesToDomain(dataHistories)
-        emit(domainHistories)
-    }
+    override fun getAssetHistory(assetId: Long): Flow<List<AssetHistory>> =
+        localDataSource.getAssetHistoryFlow(assetId).map { dataHistories ->
+            mapper.mapHistoriesToDomain(dataHistories)
+        }
 
     override suspend fun addAssetHistory(history: AssetHistory) {
         val dataHistory = mapper.mapToData(history)
         localDataSource.addAssetHistory(dataHistory)
     }
 
-    override fun getAllAssetHistories(): Flow<List<AssetHistory>> = flow {
-        val dataHistories = localDataSource.getAllAssetHistories()
-        val domainHistories = mapper.mapHistoriesToDomain(dataHistories)
-        emit(domainHistories)
-    }
+    override fun getAllAssetHistories(): Flow<List<AssetHistory>> =
+        localDataSource.getAllAssetHistoriesFlow().map { dataHistories ->
+            mapper.mapHistoriesToDomain(dataHistories)
+        }
 
-    override fun getAllTotalAssetHistory(): Flow<List<TotalAssetSnapshot>> = flow {
-        val dataSnapshots = localDataSource.getAllTotalAssetHistory()
-        val domainSnapshots = mapper.mapSnapshotsToDomain(dataSnapshots)
-        emit(domainSnapshots)
-    }
+    override fun getAllTotalAssetHistory(): Flow<List<TotalAssetSnapshot>> =
+        localDataSource.getAllTotalAssetHistoryFlow().map { dataSnapshots ->
+            mapper.mapSnapshotsToDomain(dataSnapshots)
+        }
 
     override suspend fun addTotalAssetSnapshot(snapshot: TotalAssetSnapshot) {
         val dataSnapshot = mapper.mapToData(snapshot)
@@ -68,7 +65,6 @@ class AssetRepositoryImpl(
         localDataSource.clearAllData()
     }
 
-    override fun getAssetCount(): Flow<Int> = flow {
-        emit(localDataSource.getAssetCount())
-    }
+    override fun getAssetCount(): Flow<Int> =
+        getAllAssets().map { it.size }
 }

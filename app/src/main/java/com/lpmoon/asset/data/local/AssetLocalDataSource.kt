@@ -11,6 +11,10 @@ import com.lpmoon.asset.data.mapper.AssetMapper
 import com.lpmoon.asset.domain.model.Asset as DomainAsset
 import com.lpmoon.asset.domain.model.AssetHistory as DomainAssetHistory
 import com.lpmoon.asset.domain.model.TotalAssetSnapshot as DomainTotalAssetSnapshot
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * 资产本地数据源
@@ -41,19 +45,78 @@ class AssetLocalDataSource(
         return if (json != null) {
             val type = object : TypeToken<List<DataAsset>>() {}.type
             val assets = gson.fromJson<List<DataAsset>>(json, type) ?: emptyList()
-            // 确保所有资产都有 currency 和 type 字段（处理旧数据）
-            assets.map { asset ->
-                var updatedAsset = asset
-                if (asset.currency.isEmpty()) {
-                    updatedAsset = updatedAsset.copy(currency = "CNY")
-                }
-                if (asset.type.isNullOrEmpty()) {
-                    updatedAsset = updatedAsset.copy(type = "OTHER")
-                }
-                updatedAsset
-            }
+            // 修复资产ID：为ID为0的资产分配新ID，并确保ID唯一
+            fixAssetIds(assets)
         } else {
             emptyList()
+        }
+    }
+
+    /**
+     * 修复资产ID：确保所有资产都有唯一的非零ID
+     */
+    private fun fixAssetIds(assets: List<DataAsset>): List<DataAsset> {
+        if (assets.isEmpty()) return emptyList()
+
+        // 找出最大ID
+        val maxId = assets.maxOfOrNull { it.id } ?: 0L
+        var nextId = if (maxId == 0L) 1L else maxId + 1
+
+        val seenIds = mutableSetOf<Long>()
+        val fixedAssets = mutableListOf<DataAsset>()
+        var needsFix = false
+
+        for (asset in assets) {
+            var fixedAsset = asset
+
+            // 确保所有资产都有 currency 和 type 字段（处理旧数据）
+            if (fixedAsset.currency.isEmpty()) {
+                fixedAsset = fixedAsset.copy(currency = "CNY")
+            }
+            if (fixedAsset.type.isNullOrEmpty()) {
+                fixedAsset = fixedAsset.copy(type = "OTHER")
+            }
+
+            // 检查ID是否有效（非零且唯一）
+            val originalId = fixedAsset.id
+            if (originalId == 0L || seenIds.contains(originalId)) {
+                // 需要分配新ID
+                val newId = nextId++
+                fixedAsset = fixedAsset.copy(id = newId)
+                needsFix = true
+            }
+
+            seenIds.add(fixedAsset.id)
+            fixedAssets.add(fixedAsset)
+        }
+
+        // 如果修复了任何ID，保存修复后的资产列表
+        if (needsFix) {
+            saveAssets(fixedAssets)
+        }
+
+        return fixedAssets
+    }
+
+    /**
+     * 获取所有资产的变化流
+     * 当SharedPreferences中的资产数据发生变化时自动发射新数据
+     */
+    fun getAllAssetsFlow(): Flow<List<DataAsset>> = callbackFlow {
+        // 初始值
+        trySend(getAllAssets())
+
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_ASSETS) {
+                trySend(getAllAssets())
+            }
+        }
+
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+
+        // 当流被取消时注销监听器
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
         }
     }
 
@@ -100,6 +163,54 @@ class AssetLocalDataSource(
         val newList = allHistory + history
         val json = gson.toJson(newList)
         sharedPreferences.edit().putString(KEY_ASSET_HISTORIES, json).apply()
+    }
+
+    /**
+     * 获取所有资产操作记录的变化流
+     */
+    fun getAllAssetHistoriesFlow(): Flow<List<DataAssetHistory>> = callbackFlow {
+        // 初始值
+        trySend(getAllAssetHistories())
+
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_ASSET_HISTORIES) {
+                trySend(getAllAssetHistories())
+            }
+        }
+
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
+    /**
+     * 获取指定资产操作记录的变化流
+     */
+    fun getAssetHistoryFlow(assetId: Long): Flow<List<DataAssetHistory>> =
+        getAllAssetHistoriesFlow().map { allHistory ->
+            allHistory.filter { it.assetId == assetId }.sortedByDescending { it.timestamp }
+        }
+
+    /**
+     * 获取总资产历史快照的变化流
+     */
+    fun getAllTotalAssetHistoryFlow(): Flow<List<DataTotalAssetSnapshot>> = callbackFlow {
+        // 初始值
+        trySend(getAllTotalAssetHistory())
+
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_TOTAL_ASSET_HISTORY) {
+                trySend(getAllTotalAssetHistory())
+            }
+        }
+
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose {
+            sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        }
     }
 
     /**

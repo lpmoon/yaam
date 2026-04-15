@@ -1,12 +1,13 @@
 package com.lpmoon.asset.domain.usecase
 
 import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.model.ExportAsset
 
 /**
- * 导出资产用例
+ * 文件导出资产用例
  * 负责准备导出资产数据的业务逻辑
  */
-class ExportAssetsUseCase : UseCase<ExportAssetsUseCase.Params, ExportAssetsUseCase.Result> {
+class FileExportAssetsUseCase : UseCase<FileExportAssetsUseCase.Params, FileExportAssetsUseCase.Result> {
 
     data class Params(
         val assets: List<Asset>,
@@ -73,10 +74,4 @@ class ExportAssetsUseCase : UseCase<ExportAssetsUseCase.Params, ExportAssetsUseC
         return "assets_$timestamp.json"
     }
 
-    data class ExportAsset(
-        val name: String,
-        val type: String,
-        val value: String,
-        val currency: String
-    )
 }

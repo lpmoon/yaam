@@ -30,20 +30,20 @@ class UpdateAssetUseCase(
 
         }
 
+        // 使用标志确保只更新第一个匹配的资产（防止ID重复时更新多个资产）
+        var updated = false
         val updatedAssets = currentAssets.map { asset ->
-            if (asset.id == params.assetId) {
+            if (!updated && asset.id == params.assetId) {
+                updated = true
                 asset.copy(
                     name = params.name,
                     value = params.value,
                     currency = params.currency,
                     type = params.type
-
                 )
             } else {
                 asset
-
             }
-
         }
 
         // 保存更新后的资产列表

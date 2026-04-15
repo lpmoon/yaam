@@ -18,7 +18,10 @@
       "Bash(./gradlew installDebug --quiet)",
       "Bash(git checkout:*)",
       "Bash(chmod +x:*)",
-      "Bash(./gradlew :app:assembleDebug --no-daemon --stacktrace)"
+      "Bash(./gradlew :app:assembleDebug --no-daemon --stacktrace)",
+      "Bash(./gradlew :app:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :app:build --no-daemon)",
+      "Bash(./gradlew :app:assembleDebug --no-daemon)"
     ]
   }
 }

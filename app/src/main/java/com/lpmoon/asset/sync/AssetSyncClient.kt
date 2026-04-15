@@ -5,7 +5,7 @@ import android.util.Base64
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.lpmoon.asset.util.AssetImportExportService
+import com.lpmoon.asset.domain.model.ExportAsset
 import kotlinx.coroutines.*
 import okhttp3.*
 import java.io.IOException
@@ -32,7 +32,7 @@ class AssetSyncClient(private val context: Context) {
      * 同步回调接口
      */
     interface SyncCallback {
-        fun onSuccess(assets: List<AssetImportExportService.ExportAsset>)
+        fun onSuccess(assets: List<ExportAsset>)
         fun onFailure(errorMessage: String)
     }
 
@@ -45,17 +45,41 @@ class AssetSyncClient(private val context: Context) {
         return try {
             val map = gson.fromJson(qrContent, Map::class.java)
 
-            // 验证必需字段
-            if (map["type"] != "asset_sync") {
-                Log.w(TAG, "Invalid QR type: ${map["type"]}")
-                return null
-            }
+            // 验证必需字段，但允许更宽松的格式
+            // 检查是否包含必要的同步信息
+            val serverAddress = map["server"] as? String ?: map["serverAddress"] as? String
+            val sessionId = map["sessionId"] as? String
+            val encryptionKey = map["encryptionKey"] as? String
+            val timestamp = (map["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis()
+            val dataHash = map["dataHash"] as? String ?: ""
 
-            val serverAddress = map["server"] as? String ?: return null
-            val sessionId = map["sessionId"] as? String ?: return null
-            val encryptionKey = map["encryptionKey"] as? String ?: return null
-            val timestamp = (map["timestamp"] as? Number)?.toLong() ?: return null
-            val dataHash = map["dataHash"] as? String ?: return null
+            // 如果缺少必需字段，尝试解析为其他格式
+            if (serverAddress == null || sessionId == null || encryptionKey == null) {
+                // 检查是否是资产数据格式
+                val isAssetData = try {
+                    val type = com.google.gson.reflect.TypeToken.getParameterized(
+                        List::class.java,
+                        com.lpmoon.asset.domain.model.ExportAsset::class.java
+                    ).type
+                    val assets = gson.fromJson<List<com.lpmoon.asset.domain.model.ExportAsset>>(qrContent, type)
+                    assets != null && assets.isNotEmpty()
+                } catch (e: Exception) {
+                    false
+                }
+
+                if (isAssetData) {
+                    Log.d(TAG, "QR contains direct asset data, not sync info")
+                    return null
+                }
+
+                // 尝试从AssetSyncServer.SyncInfo对象解析
+                try {
+                    return gson.fromJson(qrContent, AssetSyncServer.SyncInfo::class.java)
+                } catch (e: Exception) {
+                    Log.w(TAG, "QR content is not valid sync info format")
+                    return null
+                }
+            }
 
             AssetSyncServer.SyncInfo(
                 serverAddress = serverAddress,
@@ -193,10 +217,10 @@ class AssetSyncClient(private val context: Context) {
     /**
      * 解析资产JSON
      */
-    private fun parseAssets(json: String): List<AssetImportExportService.ExportAsset> {
+    private fun parseAssets(json: String): List<ExportAsset> {
         val type = com.google.gson.reflect.TypeToken.getParameterized(
             List::class.java,
-            AssetImportExportService.ExportAsset::class.java
+            ExportAsset::class.java
         ).type
 
         return gson.fromJson(json, type)
