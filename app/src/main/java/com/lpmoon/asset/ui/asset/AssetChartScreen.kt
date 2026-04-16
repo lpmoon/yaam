@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
-import com.lpmoon.asset.domain.model.TimeDimension
+import com.lpmoon.asset.domain.model.asset.TimeDimension
 import java.text.DecimalFormat
 import kotlin.math.abs
 import androidx.compose.ui.text.rememberTextMeasurer

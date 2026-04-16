@@ -2,7 +2,7 @@ package com.lpmoon.asset.data.local
 
 import com.lpmoon.asset.data.local.room.dao.ExchangeRateDao
 import com.lpmoon.asset.data.local.room.entity.ExchangeRateEntity
-import com.lpmoon.asset.domain.model.ExchangeRate
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
 
 /**
  * 汇率本地数据源（Room 实现）

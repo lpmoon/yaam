@@ -2,8 +2,8 @@ package com.lpmoon.asset.data.local.room.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.OperationType
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.OperationType
 
 /**
  * Room 资产操作记录实体

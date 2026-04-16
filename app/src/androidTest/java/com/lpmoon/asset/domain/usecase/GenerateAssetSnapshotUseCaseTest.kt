@@ -5,7 +5,8 @@ import android.content.res.Resources
 import android.util.DisplayMetrics
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.usecase.asset.GenerateAssetSnapshotUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

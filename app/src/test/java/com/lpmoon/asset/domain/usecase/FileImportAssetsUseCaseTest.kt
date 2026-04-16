@@ -1,6 +1,6 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.usecase.asset.FileImportAssetsUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

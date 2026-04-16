@@ -2,7 +2,7 @@ package com.lpmoon.asset.data.local.room.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lpmoon.asset.domain.model.TotalAssetSnapshot
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
 
 /**
  * Room 总资产快照实体

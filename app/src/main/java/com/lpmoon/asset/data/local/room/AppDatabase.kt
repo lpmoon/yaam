@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import com.lpmoon.asset.data.local.room.dao.AssetDao
 import com.lpmoon.asset.data.local.room.dao.AssetHistoryDao
 import com.lpmoon.asset.data.local.room.dao.ExchangeRateDao
+import com.lpmoon.asset.data.local.room.dao.TaxSettingsDao
 import com.lpmoon.asset.data.local.room.dao.TotalAssetSnapshotDao
 import com.lpmoon.asset.data.local.room.entity.AssetEntity
 import com.lpmoon.asset.data.local.room.entity.AssetHistoryEntity
 import com.lpmoon.asset.data.local.room.entity.ExchangeRateEntity
+import com.lpmoon.asset.data.local.room.entity.TaxSettingsEntity
 import com.lpmoon.asset.data.local.room.entity.TotalAssetSnapshotEntity
 
 /**
@@ -21,9 +23,10 @@ import com.lpmoon.asset.data.local.room.entity.TotalAssetSnapshotEntity
         AssetEntity::class,
         AssetHistoryEntity::class,
         TotalAssetSnapshotEntity::class,
-        ExchangeRateEntity::class
+        ExchangeRateEntity::class,
+        TaxSettingsEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,6 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun assetHistoryDao(): AssetHistoryDao
     abstract fun totalAssetSnapshotDao(): TotalAssetSnapshotDao
     abstract fun exchangeRateDao(): ExchangeRateDao
+    abstract fun taxSettingsDao(): TaxSettingsDao
 
     companion object {
         private const val DATABASE_NAME = "asset_database"

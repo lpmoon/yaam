@@ -1,10 +1,10 @@
 package com.lpmoon.asset.data.repository
 
 import com.lpmoon.asset.data.local.AssetLocalDataSource
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.TotalAssetSnapshot
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

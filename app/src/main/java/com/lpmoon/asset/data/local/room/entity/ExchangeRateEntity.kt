@@ -2,7 +2,7 @@ package com.lpmoon.asset.data.local.room.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lpmoon.asset.domain.model.ExchangeRate
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
 
 /**
  * Room 汇率缓存实体（只保存单条最新记录，id 固定为 1）

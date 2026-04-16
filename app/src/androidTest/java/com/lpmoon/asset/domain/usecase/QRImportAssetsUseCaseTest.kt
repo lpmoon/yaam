@@ -3,7 +3,7 @@ package com.lpmoon.asset.domain.usecase
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.lpmoon.asset.domain.model.ExportAsset
+import com.lpmoon.asset.domain.usecase.asset.QRImportAssetsUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before

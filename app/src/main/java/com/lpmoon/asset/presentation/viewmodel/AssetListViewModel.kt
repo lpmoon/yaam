@@ -3,10 +3,25 @@ package com.lpmoon.asset.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.ExchangeRate
-import com.lpmoon.asset.domain.model.TimeDimension
-import com.lpmoon.asset.domain.usecase.*
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.TimeDimension
+import com.lpmoon.asset.domain.usecase.asset.AddAssetUseCase
+import com.lpmoon.asset.domain.usecase.asset.AddTotalAssetSnapshotUseCase
+import com.lpmoon.asset.domain.usecase.asset.CalculateAssetHistoryUseCase
+import com.lpmoon.asset.domain.usecase.asset.CalculateTotalAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.ClearAllAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.DeleteAssetUseCase
+import com.lpmoon.asset.domain.usecase.asset.FileExportAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.FileImportAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.GenerateAssetSnapshotUseCase
+import com.lpmoon.asset.domain.usecase.asset.GetAllAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.GetAssetHistoryUseCase
+import com.lpmoon.asset.domain.usecase.asset.GetExchangeRateUseCase
+import com.lpmoon.asset.domain.usecase.asset.RefreshExchangeRateUseCase
+import com.lpmoon.asset.domain.usecase.asset.SaveAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.UpdateAssetUseCase
 import com.lpmoon.asset.util.ExpressionEvaluator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -107,7 +122,7 @@ class AssetListViewModel(
         }
     }
 
-    fun getAssetHistory(assetId: Long): List<com.lpmoon.asset.domain.model.AssetHistory> {
+    fun getAssetHistory(assetId: Long): List<AssetHistory> {
         return kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 getAssetHistoryUseCase(assetId).first()

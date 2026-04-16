@@ -31,9 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.AssetType
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.AssetType
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date

@@ -3,7 +3,6 @@ package com.lpmoon.asset.data.remote
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.lpmoon.asset.domain.model.ExchangeRate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient

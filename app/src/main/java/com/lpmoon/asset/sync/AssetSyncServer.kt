@@ -3,8 +3,8 @@ package com.lpmoon.asset.sync
 import android.content.Context
 import android.util.Base64
 import com.google.gson.Gson
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.ExportAsset
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.ExportAsset
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*

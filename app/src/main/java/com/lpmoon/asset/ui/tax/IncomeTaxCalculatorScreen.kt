@@ -13,9 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.lpmoon.asset.data.tax.IncomeTaxResult
-import com.lpmoon.asset.data.tax.calculateIncomeTax
-import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
+import com.lpmoon.asset.domain.model.tax.IncomeTaxResult
+import com.lpmoon.asset.domain.usecase.tax.CalculateIncomeTaxUseCase
+import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,6 +26,7 @@ fun IncomeTaxCalculatorScreen(
 ) {
     val viewModel: TaxSettingsViewModel = viewModel()
     val taxSettings by viewModel.taxSettings.collectAsState()
+    val calculateIncomeTaxUseCase = remember { CalculateIncomeTaxUseCase() }
 
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
@@ -36,6 +37,7 @@ fun IncomeTaxCalculatorScreen(
     var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) } // 失业保险个人比例
     var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<IncomeTaxResult?>(null) }
 
     // 当税率设置变化时，更新本地状态
     LaunchedEffect(taxSettings) {
@@ -61,17 +63,19 @@ fun IncomeTaxCalculatorScreen(
         else -> 0.0
     }
 
-    val result = if (baseMonthlySalary > 0) {
-        calculateIncomeTax(
-            monthlySalary = baseMonthlySalary,
-            socialSecurityRate = socialSecurityRateValue / 100.0,
-            housingFundRate = housingFundRateValue / 100.0,
-            medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
-            unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
-            specialDeduction = specialDeductionValue
-        )
-    } else {
-        null
+    LaunchedEffect(baseMonthlySalary, socialSecurityRateValue, housingFundRateValue, medicalInsuranceRateValue, unemploymentInsuranceRateValue, specialDeductionValue) {
+        if (baseMonthlySalary > 0) {
+            result = calculateIncomeTaxUseCase(
+                CalculateIncomeTaxUseCase.Params(
+                    monthlySalary = baseMonthlySalary,
+                    socialSecurityRate = socialSecurityRateValue / 100.0,
+                    housingFundRate = housingFundRateValue / 100.0,
+                    medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+                    unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
+                    specialDeduction = specialDeductionValue
+                )
+            )
+        }
     }
 
     if (isEmbedded) {

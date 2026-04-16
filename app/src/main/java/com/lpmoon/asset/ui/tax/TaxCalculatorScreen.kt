@@ -10,9 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.lpmoon.asset.data.tax.calculateBonusTax
-import com.lpmoon.asset.data.tax.calculateIncomeTax
-import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
+import com.lpmoon.asset.domain.model.tax.BonusTaxResult
+import com.lpmoon.asset.domain.model.tax.IncomeTaxResult
+import com.lpmoon.asset.domain.usecase.tax.CalculateBonusTaxUseCase
+import com.lpmoon.asset.domain.usecase.tax.CalculateIncomeTaxUseCase
+import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,16 +127,28 @@ fun TaxCalculatorScreen(
 
 @Composable
 private fun TaxRateCalculatorContentWrapper() {
+    val calculateBonusTaxUseCase = remember { CalculateBonusTaxUseCase() }
+    val scope = rememberCoroutineScope()
+
     var bonusAmount by remember { mutableStateOf("") }
     var monthlySalary by remember { mutableStateOf("") }
     var includeMonthlySalary by remember { mutableStateOf(false) }
     var showResult by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<BonusTaxResult?>(null) }
 
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result =
-        calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    LaunchedEffect(bonusValue, monthlySalaryValue, includeMonthlySalary) {
+        if (bonusValue > 0) {
+            result = calculateBonusTaxUseCase(
+                CalculateBonusTaxUseCase.Params(
+                    bonusAmount = bonusValue,
+                    monthlySalary = if (includeMonthlySalary) monthlySalaryValue else 0.0
+                )
+            )
+        }
+    }
 
     TaxRateCalculatorContent(
         bonusAmount = bonusAmount,
@@ -156,6 +170,7 @@ private fun TaxRateCalculatorContentWrapper() {
 private fun IncomeTaxCalculatorContentWrapper() {
     val viewModel: TaxSettingsViewModel = viewModel()
     val taxSettings by viewModel.taxSettings.collectAsState()
+    val calculateIncomeTaxUseCase = remember { CalculateIncomeTaxUseCase() }
 
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
@@ -166,6 +181,7 @@ private fun IncomeTaxCalculatorContentWrapper() {
     var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) } // 失业保险个人比例
     var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) } // 专项附加扣除
     var showResult by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<IncomeTaxResult?>(null) }
 
     // 当税率设置变化时，更新本地状态
     LaunchedEffect(taxSettings) {
@@ -191,17 +207,19 @@ private fun IncomeTaxCalculatorContentWrapper() {
         else -> 0.0
     }
 
-    val result = if (baseMonthlySalary > 0) {
-        calculateIncomeTax(
-            monthlySalary = baseMonthlySalary,
-            socialSecurityRate = socialSecurityRateValue / 100.0,
-            housingFundRate = housingFundRateValue / 100.0,
-            medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
-            unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
-            specialDeduction = specialDeductionValue
-        )
-    } else {
-        null
+    LaunchedEffect(baseMonthlySalary, socialSecurityRateValue, housingFundRateValue, medicalInsuranceRateValue, unemploymentInsuranceRateValue, specialDeductionValue) {
+        if (baseMonthlySalary > 0) {
+            result = calculateIncomeTaxUseCase(
+                CalculateIncomeTaxUseCase.Params(
+                    monthlySalary = baseMonthlySalary,
+                    socialSecurityRate = socialSecurityRateValue / 100.0,
+                    housingFundRate = housingFundRateValue / 100.0,
+                    medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+                    unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
+                    specialDeduction = specialDeductionValue
+                )
+            )
+        }
     }
 
     IncomeTaxCalculatorContent(

@@ -6,9 +6,9 @@ import com.lpmoon.asset.data.local.room.dao.TotalAssetSnapshotDao
 import com.lpmoon.asset.data.local.room.entity.AssetEntity
 import com.lpmoon.asset.data.local.room.entity.AssetHistoryEntity
 import com.lpmoon.asset.data.local.room.entity.TotalAssetSnapshotEntity
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.TotalAssetSnapshot
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

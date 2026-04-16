@@ -1,7 +1,8 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.ExchangeRate
-import com.lpmoon.asset.domain.repository.ExchangeRateRepository
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.repository.asset.ExchangeRateRepository
+import com.lpmoon.asset.domain.usecase.asset.GetExchangeRateUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

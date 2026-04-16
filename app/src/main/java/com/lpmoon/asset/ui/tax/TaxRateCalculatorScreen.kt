@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.data.tax.BonusTaxResult
-import com.lpmoon.asset.data.tax.calculateBonusTax
+import com.lpmoon.asset.domain.model.tax.BonusTaxResult
+import com.lpmoon.asset.domain.usecase.tax.CalculateBonusTaxUseCase
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,16 +23,27 @@ fun TaxRateCalculatorScreen(
     onBack: () -> Unit,
     isEmbedded: Boolean = false
 ) {
+    val calculateBonusTaxUseCase = remember { CalculateBonusTaxUseCase() }
+
     var bonusAmount by remember { mutableStateOf("") }
     var monthlySalary by remember { mutableStateOf("") }
     var includeMonthlySalary by remember { mutableStateOf(false) }
     var showResult by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<BonusTaxResult?>(null) }
 
     val bonusValue = bonusAmount.toDoubleOrNull() ?: 0.0
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
 
-    val result =
-        calculateBonusTax(bonusValue, if (includeMonthlySalary) monthlySalaryValue else 0.0)
+    LaunchedEffect(bonusValue, monthlySalaryValue, includeMonthlySalary) {
+        if (bonusValue > 0) {
+            result = calculateBonusTaxUseCase(
+                CalculateBonusTaxUseCase.Params(
+                    bonusAmount = bonusValue,
+                    monthlySalary = if (includeMonthlySalary) monthlySalaryValue else 0.0
+                )
+            )
+        }
+    }
 
     if (isEmbedded) {
         // 在嵌入模式下，只显示内容部分
@@ -110,7 +121,7 @@ fun TaxRateCalculatorContent(
     showResult: Boolean,
     bonusValue: Double,
     monthlySalaryValue: Double,
-    result: BonusTaxResult,
+    result: BonusTaxResult?,
     onBonusAmountChange: (String) -> Unit,
     onMonthlySalaryChange: (String) -> Unit,
     onIncludeMonthlySalaryChange: (Boolean) -> Unit,
@@ -255,7 +266,7 @@ fun TaxRateCalculatorContent(
         }
 
         // 结果卡片
-        if (showResult) {
+        if (showResult && result != null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(

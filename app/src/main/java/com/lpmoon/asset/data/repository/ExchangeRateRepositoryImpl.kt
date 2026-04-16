@@ -2,8 +2,8 @@ package com.lpmoon.asset.data.repository
 
 import com.lpmoon.asset.data.local.ExchangeRateLocalDataSource
 import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
-import com.lpmoon.asset.domain.model.ExchangeRate
-import com.lpmoon.asset.domain.repository.ExchangeRateRepository
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.repository.asset.ExchangeRateRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

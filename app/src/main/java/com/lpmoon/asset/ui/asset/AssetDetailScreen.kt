@@ -17,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.CurrencyType
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.CurrencyType
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)

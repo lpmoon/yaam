@@ -1,6 +1,7 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.ExchangeRate
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.usecase.asset.ConvertCurrencyUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,8 +1,9 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.OperationType
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.OperationType
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.GetAssetHistoryUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf

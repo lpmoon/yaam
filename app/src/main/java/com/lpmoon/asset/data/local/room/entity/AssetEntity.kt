@@ -2,7 +2,7 @@ package com.lpmoon.asset.data.local.room.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lpmoon.asset.domain.model.Asset
+import com.lpmoon.asset.domain.model.asset.Asset
 
 /**
  * Room 资产实体

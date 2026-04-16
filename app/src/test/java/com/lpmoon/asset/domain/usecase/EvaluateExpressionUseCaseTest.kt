@@ -1,5 +1,6 @@
 package com.lpmoon.asset.domain.usecase
 
+import com.lpmoon.asset.domain.usecase.asset.EvaluateExpressionUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test

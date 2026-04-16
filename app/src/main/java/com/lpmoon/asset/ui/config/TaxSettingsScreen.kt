@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.lpmoon.asset.data.tax.TaxSettings
-import com.lpmoon.asset.viewmodel.TaxSettingsViewModel
+import com.lpmoon.asset.domain.model.tax.TaxSettings
+import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
