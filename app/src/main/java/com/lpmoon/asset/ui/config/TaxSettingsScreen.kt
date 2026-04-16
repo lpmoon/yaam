@@ -13,14 +13,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lpmoon.asset.domain.model.tax.TaxSettings
+import com.lpmoon.asset.presentation.di.ViewModelFactory
 import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaxSettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModelFactory: ViewModelFactory
 ) {
-    val viewModel: TaxSettingsViewModel = viewModel()
+    val viewModel: TaxSettingsViewModel = viewModel(factory = viewModelFactory)
     val taxSettings by viewModel.taxSettings.collectAsState()
 
     var socialSecurityRate by remember { mutableStateOf(viewModel.formatSocialSecurityPercent()) }

@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lpmoon.asset.presentation.di.ViewModelFactory
 import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
+import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 import com.lpmoon.asset.ui.asset.AssetListScreen
 import com.lpmoon.asset.ui.asset.AssetRankingScreen
 import com.lpmoon.asset.ui.config.ConfigurationScreen
@@ -122,7 +123,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     is Screen.TaxSettings -> {
                         TaxSettingsScreen(
-            onBack = { currentScreen = Screen.Configuration }
+                            onBack = { currentScreen = Screen.Configuration },
+                            viewModelFactory = viewModelFactory
                         )
                     }
                 }

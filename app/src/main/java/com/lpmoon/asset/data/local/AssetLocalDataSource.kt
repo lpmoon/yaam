@@ -37,6 +37,28 @@ class AssetLocalDataSource(
         }
 
     /**
+     * 添加单个资产，返回自动生成的 ID
+     */
+    suspend fun addAsset(asset: Asset): Long {
+        val entity = AssetEntity.fromDomainModel(asset).copy(id = 0)
+        return assetDao.insertAsset(entity)
+    }
+
+    /**
+     * 更新单个资产
+     */
+    suspend fun updateAsset(asset: Asset) {
+        assetDao.updateAsset(AssetEntity.fromDomainModel(asset))
+    }
+
+    /**
+     * 删除单个资产
+     */
+    suspend fun deleteAsset(asset: Asset) {
+        assetDao.deleteAsset(AssetEntity.fromDomainModel(asset))
+    }
+
+    /**
      * 保存资产列表（全量替换）
      */
     suspend fun saveAssets(assets: List<Asset>) {
@@ -48,7 +70,7 @@ class AssetLocalDataSource(
      * 获取资产操作记录（一次性）
      */
     suspend fun getAssetHistory(assetId: Long): List<AssetHistory> =
-        emptyList() // 通过 flow 使用
+        assetHistoryDao.getHistoriesByAssetId(assetId).map { it.toDomainModel() }
 
     /**
      * 获取指定资产操作记录的变化流
@@ -61,7 +83,8 @@ class AssetLocalDataSource(
     /**
      * 获取所有资产操作记录（一次性）
      */
-    suspend fun getAllAssetHistories(): List<AssetHistory> = emptyList() // 通过 flow 使用
+    suspend fun getAllAssetHistories(): List<AssetHistory> =
+        assetHistoryDao.getAllHistories().map { it.toDomainModel() }
 
     /**
      * 获取所有资产操作记录的变化流
@@ -77,6 +100,12 @@ class AssetLocalDataSource(
     suspend fun addAssetHistory(history: AssetHistory) {
         assetHistoryDao.insertHistory(AssetHistoryEntity.fromDomainModel(history))
     }
+
+    /**
+     * 获取总资产历史快照（一次性）
+     */
+    suspend fun getAllTotalAssetHistory(): List<TotalAssetSnapshot> =
+        totalAssetSnapshotDao.getAllSnapshots().map { it.toDomainModel() }
 
     /**
      * 获取总资产历史快照的变化流

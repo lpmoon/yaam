@@ -3,7 +3,6 @@ package com.lpmoon.asset.domain.usecase.asset
 import com.lpmoon.asset.domain.model.asset.TimeDimension
 import com.lpmoon.asset.domain.repository.asset.AssetRepository
 import com.lpmoon.asset.domain.usecase.UseCase
-import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,7 +14,7 @@ class CalculateAssetHistoryUseCase(
 ) : UseCase<TimeDimension, List<Pair<String, Double>>> {
 
     override suspend fun invoke(dimension: TimeDimension): List<Pair<String, Double>> {
-        val allSnapshots = assetRepository.getAllTotalAssetHistory().first()
+        val allSnapshots = assetRepository.getAllTotalAssetHistory()
             .sortedBy { it.timestamp }
 
         if (allSnapshots.isEmpty()) {

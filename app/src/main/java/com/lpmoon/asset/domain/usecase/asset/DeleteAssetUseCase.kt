@@ -1,5 +1,7 @@
 package com.lpmoon.asset.domain.usecase.asset
 
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
 import com.lpmoon.asset.domain.repository.asset.AssetRepository
 import com.lpmoon.asset.domain.usecase.UseCase
 import kotlinx.coroutines.flow.first
@@ -8,26 +10,35 @@ import kotlinx.coroutines.flow.first
  * 删除资产用例
  */
 class DeleteAssetUseCase(
-    private val assetRepository: AssetRepository
+    private val assetRepository: AssetRepository,
+    private val calculateTotalAssetsUseCase: CalculateTotalAssetsUseCase
 ) : UseCase<Long, Unit> {
 
     override suspend fun invoke(assetId: Long) {
         val currentAssets = assetRepository.getAllAssets().first()
-        // 只删除第一个匹配的资产（防止ID重复时删除多个资产）
-        var deleted = false
-        val updatedAssets = currentAssets.filter { asset ->
-            if (!deleted && asset.id == assetId) {
-                deleted = true
-                false // 不包含这个资产
-            } else {
-                true // 包含其他资产
-            }
+        val assetToDelete = currentAssets.find { it.id == assetId }
+
+        if (assetToDelete != null) {
+            assetRepository.deleteAsset(assetToDelete)
+
+            // 清理该资产的所有历史记录
+            assetRepository.deleteHistoriesByAssetId(assetId)
+
+            // 创建总资产快照
+            addTotalAssetSnapshot()
         }
+    }
 
-        // 保存更新后的资产列表
-        assetRepository.saveAssets(updatedAssets)
-
-        // 清理该资产的所有历史记录，避免ID重复使用时混淆
-        assetRepository.deleteHistoriesByAssetId(assetId)
+    private suspend fun addTotalAssetSnapshot() {
+        try {
+            val totalValue = calculateTotalAssetsUseCase.calculateNow()
+            val snapshot = TotalAssetSnapshot(
+                timestamp = System.currentTimeMillis(),
+                totalValue = totalValue
+            )
+            assetRepository.addTotalAssetSnapshot(snapshot)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

@@ -16,6 +16,9 @@ interface TotalAssetSnapshotDao {
     @Query("SELECT * FROM total_asset_snapshots ORDER BY timestamp ASC")
     fun getAllSnapshotsFlow(): Flow<List<TotalAssetSnapshotEntity>>
 
+    @Query("SELECT * FROM total_asset_snapshots ORDER BY timestamp ASC")
+    suspend fun getAllSnapshots(): List<TotalAssetSnapshotEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSnapshot(snapshot: TotalAssetSnapshotEntity): Long
 

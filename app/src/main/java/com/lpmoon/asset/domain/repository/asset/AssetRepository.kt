@@ -17,6 +17,21 @@ interface AssetRepository {
     fun getAllAssets(): Flow<List<Asset>>
 
     /**
+     * 添加单个资产，返回自动生成的 ID
+     */
+    suspend fun addAsset(asset: Asset): Long
+
+    /**
+     * 更新单个资产
+     */
+    suspend fun updateAsset(asset: Asset)
+
+    /**
+     * 删除单个资产
+     */
+    suspend fun deleteAsset(asset: Asset)
+
+    /**
      * 保存资产列表
      */
     suspend fun saveAssets(assets: List<Asset>)
@@ -24,7 +39,7 @@ interface AssetRepository {
     /**
      * 获取指定资产的操作记录
      */
-    fun getAssetHistory(assetId: Long): Flow<List<AssetHistory>>
+    suspend fun getAssetHistory(assetId: Long): List<AssetHistory>
 
     /**
      * 添加资产操作记录
@@ -34,12 +49,12 @@ interface AssetRepository {
     /**
      * 获取所有资产操作记录
      */
-    fun getAllAssetHistories(): Flow<List<AssetHistory>>
+    suspend fun getAllAssetHistories(): List<AssetHistory>
 
     /**
      * 获取总资产历史快照
      */
-    fun getAllTotalAssetHistory(): Flow<List<TotalAssetSnapshot>>
+    suspend fun getAllTotalAssetHistory(): List<TotalAssetSnapshot>
 
     /**
      * 添加总资产快照

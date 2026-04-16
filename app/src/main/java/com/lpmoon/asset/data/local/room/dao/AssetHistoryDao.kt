@@ -16,8 +16,14 @@ interface AssetHistoryDao {
     @Query("SELECT * FROM asset_histories WHERE assetId = :assetId ORDER BY timestamp DESC")
     fun getHistoriesByAssetIdFlow(assetId: Long): Flow<List<AssetHistoryEntity>>
 
+    @Query("SELECT * FROM asset_histories WHERE assetId = :assetId ORDER BY timestamp DESC")
+    suspend fun getHistoriesByAssetId(assetId: Long): List<AssetHistoryEntity>
+
     @Query("SELECT * FROM asset_histories ORDER BY timestamp DESC")
     fun getAllHistoriesFlow(): Flow<List<AssetHistoryEntity>>
+
+    @Query("SELECT * FROM asset_histories ORDER BY timestamp DESC")
+    suspend fun getAllHistories(): List<AssetHistoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(history: AssetHistoryEntity): Long

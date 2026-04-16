@@ -1,11 +1,10 @@
 package com.lpmoon.asset.presentation.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpmoon.asset.data.repository.TaxSettingsRepositoryImpl
 import com.lpmoon.asset.domain.model.tax.TaxSettings
 import com.lpmoon.asset.domain.usecase.tax.LoadTaxSettingsUseCase
+import com.lpmoon.asset.domain.usecase.tax.ObserveTaxSettingsUseCase
 import com.lpmoon.asset.domain.usecase.tax.SaveTaxSettingsUseCase
 import com.lpmoon.asset.util.formatNumber
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,12 +16,13 @@ import kotlinx.coroutines.launch
  * 税率设置 ViewModel
  * 管理税率设置的状态、百分比转换逻辑
  */
-class TaxSettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = TaxSettingsRepositoryImpl(application)
-    private val loadTaxSettingsUseCase = LoadTaxSettingsUseCase(repository)
-    private val saveTaxSettingsUseCase = SaveTaxSettingsUseCase(repository)
+class TaxSettingsViewModel(
+    private val observeTaxSettingsUseCase: ObserveTaxSettingsUseCase,
+    private val loadTaxSettingsUseCase: LoadTaxSettingsUseCase,
+    private val saveTaxSettingsUseCase: SaveTaxSettingsUseCase
+) : ViewModel() {
 
-    val taxSettings: StateFlow<TaxSettings> = repository.getTaxSettings()
+    val taxSettings: StateFlow<TaxSettings> = observeTaxSettingsUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

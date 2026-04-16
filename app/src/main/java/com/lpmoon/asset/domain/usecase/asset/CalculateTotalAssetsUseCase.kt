@@ -7,6 +7,7 @@ import com.lpmoon.asset.domain.repository.asset.ExchangeRateRepository
 import com.lpmoon.asset.domain.usecase.FlowUseCaseNoParam
 import com.lpmoon.asset.util.ExpressionEvaluator
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.*
 
 /**
@@ -25,6 +26,20 @@ class CalculateTotalAssetsUseCase(
         ) { assets, exchangeRate ->
             calculateTotalAssets(assets, exchangeRate)
         }
+    }
+
+    /**
+     * 一次性计算当前总资产（suspend版本）
+     * 用于需要立即获取总资产的场景
+     */
+    suspend fun calculateNow(): Double {
+        val assets = assetRepository.getAllAssets().first()
+        val exchangeRate = try {
+            exchangeRateRepository.getCachedExchangeRate()
+        } catch (e: Exception) {
+            ExchangeRate.getDefaultValues()
+        }
+        return calculateTotalAssets(assets, exchangeRate)
     }
 
     private fun calculateTotalAssets(assets: List<Asset>, exchangeRate: ExchangeRate): Double {

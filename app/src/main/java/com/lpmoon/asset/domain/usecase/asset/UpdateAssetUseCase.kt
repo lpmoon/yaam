@@ -1,7 +1,9 @@
 package com.lpmoon.asset.domain.usecase.asset
 
+import com.lpmoon.asset.domain.model.asset.Asset
 import com.lpmoon.asset.domain.model.asset.AssetHistory
 import com.lpmoon.asset.domain.model.asset.OperationType
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
 import com.lpmoon.asset.domain.repository.asset.AssetRepository
 import com.lpmoon.asset.domain.usecase.UseCase
 import kotlinx.coroutines.flow.first
@@ -10,7 +12,8 @@ import kotlinx.coroutines.flow.first
  * 更新资产用例
  */
 class UpdateAssetUseCase(
-    private val assetRepository: AssetRepository
+    private val assetRepository: AssetRepository,
+    private val calculateTotalAssetsUseCase: CalculateTotalAssetsUseCase
 ) : UseCase<UpdateAssetUseCase.Params, Unit> {
 
     data class Params(
@@ -26,30 +29,18 @@ class UpdateAssetUseCase(
         val oldAsset = currentAssets.find { it.id == params.assetId }
 
         if (oldAsset == null) {
-            // 资产不存在，可能是竞态��件，记录错误但不抛出异常
+            // 资产不存在，可能是竞态条件，记录错误但不抛出异常
             return
-
         }
 
-        // 使用标志确保只更新第一个匹配的资产（防止ID重复时更新多个资产）
-        var updated = false
-        val updatedAssets = currentAssets.map { asset ->
-            if (!updated && asset.id == params.assetId) {
-                updated = true
-                asset.copy(
-                    name = params.name,
-                    value = params.value,
-                    currency = params.currency,
-                    type = params.type
-                )
-            } else {
-                asset
-            }
-        }
+        val updatedAsset = oldAsset.copy(
+            name = params.name,
+            value = params.value,
+            currency = params.currency,
+            type = params.type
+        )
 
-        // 保存更新后的资产列表
-
-        assetRepository.saveAssets(updatedAssets)
+        assetRepository.updateAsset(updatedAsset)
 
         // 记录操作历史
         val history = AssetHistory(
@@ -58,10 +49,23 @@ class UpdateAssetUseCase(
             oldValue = oldAsset.value,
             newValue = params.value,
             operationType = OperationType.UPDATE
-
         )
-
         assetRepository.addAssetHistory(history)
 
+        // 创建总资产快照
+        addTotalAssetSnapshot()
+    }
+
+    private suspend fun addTotalAssetSnapshot() {
+        try {
+            val totalValue = calculateTotalAssetsUseCase.calculateNow()
+            val snapshot = TotalAssetSnapshot(
+                timestamp = System.currentTimeMillis(),
+                totalValue = totalValue
+            )
+            assetRepository.addTotalAssetSnapshot(snapshot)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

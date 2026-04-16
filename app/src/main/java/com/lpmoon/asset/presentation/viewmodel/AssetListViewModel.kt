@@ -8,7 +8,6 @@ import com.lpmoon.asset.domain.model.asset.ExchangeRate
 import com.lpmoon.asset.domain.model.asset.AssetHistory
 import com.lpmoon.asset.domain.model.asset.TimeDimension
 import com.lpmoon.asset.domain.usecase.asset.AddAssetUseCase
-import com.lpmoon.asset.domain.usecase.asset.AddTotalAssetSnapshotUseCase
 import com.lpmoon.asset.domain.usecase.asset.CalculateAssetHistoryUseCase
 import com.lpmoon.asset.domain.usecase.asset.CalculateTotalAssetsUseCase
 import com.lpmoon.asset.domain.usecase.asset.ClearAllAssetsUseCase
@@ -46,7 +45,6 @@ class AssetListViewModel(
     private val exportAssetsUseCase: FileExportAssetsUseCase,
     private val importAssetsUseCase: FileImportAssetsUseCase,
     private val generateAssetSnapshotUseCase: GenerateAssetSnapshotUseCase,
-    private val addTotalAssetSnapshotUseCase: AddTotalAssetSnapshotUseCase,
     private val fileIoService: com.lpmoon.asset.util.FileIoService,
     private val assetSyncServer: com.lpmoon.asset.sync.AssetSyncServer
 ) : AndroidViewModel(application) {
@@ -87,7 +85,6 @@ class AssetListViewModel(
                     type = type
                 )
             )
-            addTotalAssetSnapshotIfNeeded()
         }
     }
 
@@ -102,36 +99,39 @@ class AssetListViewModel(
                     type = type
                 )
             )
-            addTotalAssetSnapshotIfNeeded()
         }
     }
 
     fun deleteAsset(assetId: Long) {
         viewModelScope.launch {
             deleteAssetUseCase(assetId)
-            addTotalAssetSnapshotIfNeeded()
         }
     }
 
-    private suspend fun addTotalAssetSnapshotIfNeeded() {
-        try {
-            val currentTotal = calculateTotalAssetsUseCase().first()
-            addTotalAssetSnapshotUseCase(currentTotal)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
+    /**
+     * 获取资产历史记录
+     *
+     * 注意：这里使用 runBlocking 是因为：
+     * 1. 这是在 Compose UI 的 onClick 回调中调用的，用户点击后需要立即看到结果
+     * 2. 这是一个轻量级的数据库查询操作，通常在几毫秒内完成
+     * 3. 使用 Dispatchers.IO 确保在后台线程执行
+     * 4. 长期来看，应该重构 UI 层使用 Flow + collectAsState
+     */
     fun getAssetHistory(assetId: Long): List<AssetHistory> {
         return kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                getAssetHistoryUseCase(assetId).first()
+                getAssetHistoryUseCase(assetId)
             } catch (e: Exception) {
                 emptyList()
             }
         }
     }
 
+    /**
+     * 获取总资产历史记录
+     *
+     * 注意：这里使用 runBlocking 的原因同 getAssetHistory
+     */
     fun getTotalAssetHistory(dimension: TimeDimension): List<Pair<String, Double>> {
         return kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
             try {
@@ -175,6 +175,14 @@ class AssetListViewModel(
         return ExpressionEvaluator.beautify(asset.value)
     }
 
+    /**
+     * 导出资产
+     *
+     * 注意：这里使用 runBlocking 是因为：
+     * 1. 这是在 Activity Result API 的回调中调用的
+     * 2. Activity Result API 的回调本身就是在主线程调用的，但文件操作需要后台执行
+     * 3. 长期来看，应该重构为状态驱动的方式（StateFlow + LaunchedEffect）
+     */
     fun exportAssets(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.runBlocking {
             try {
@@ -198,6 +206,11 @@ class AssetListViewModel(
         }
     }
 
+    /**
+     * 导入资产
+     *
+     * 注意：这里使用 runBlocking 的原因同 exportAssets
+     */
     fun importAssets(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.runBlocking {
             try {
@@ -212,7 +225,6 @@ class AssetListViewModel(
 
                 return@runBlocking if (importResult.success && importResult.importedAssets != null) {
                     saveAssetsUseCase(importResult.importedAssets)
-                    addTotalAssetSnapshotIfNeeded()
                     true
                 } else {
                     false
@@ -231,11 +243,6 @@ class AssetListViewModel(
     fun clearAllAssets() {
         viewModelScope.launch {
             clearAllAssetsUseCase()
-            try {
-                addTotalAssetSnapshotUseCase(0.0)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
         }
     }
 
@@ -244,6 +251,11 @@ class AssetListViewModel(
         return gson.toJson(assets.value)
     }
 
+    /**
+     * 从 JSON 导入
+     *
+     * 注意：这里使用 runBlocking 的原因同 exportAssets
+     */
     fun importFromJson(json: String): Boolean {
         return kotlinx.coroutines.runBlocking {
             try {
@@ -256,7 +268,6 @@ class AssetListViewModel(
 
                 return@runBlocking if (importResult.success && importResult.importedAssets != null) {
                     saveAssetsUseCase(importResult.importedAssets)
-                    addTotalAssetSnapshotIfNeeded()
                     true
                 } else {
                     false

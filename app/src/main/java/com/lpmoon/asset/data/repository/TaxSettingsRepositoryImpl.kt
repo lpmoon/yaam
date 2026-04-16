@@ -20,6 +20,10 @@ class TaxSettingsRepositoryImpl(context: Context) : TaxSettingsRepository {
     private val taxSettingsDao = AppDatabase.getInstance(context).taxSettingsDao()
 
     // 初始化时检查并执行迁移
+    // 注意：这里使用 runBlocking 是可接受的，因为：
+    // 1. 这是一次性迁移，只在应用第一次从旧版本升级时运行
+    // 2. 迁移数据量很小（只是几个配置项）
+    // 3. 我们需要在第一次使用数据前确保迁移完成
     init {
         runBlocking {
             migrateFromSharedPreferencesIfNeeded()

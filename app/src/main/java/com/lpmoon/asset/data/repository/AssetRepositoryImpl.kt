@@ -18,22 +18,34 @@ class AssetRepositoryImpl(
     override fun getAllAssets(): Flow<List<Asset>> =
         localDataSource.getAllAssetsFlow()
 
+    override suspend fun addAsset(asset: Asset): Long {
+        return localDataSource.addAsset(asset)
+    }
+
+    override suspend fun updateAsset(asset: Asset) {
+        localDataSource.updateAsset(asset)
+    }
+
+    override suspend fun deleteAsset(asset: Asset) {
+        localDataSource.deleteAsset(asset)
+    }
+
     override suspend fun saveAssets(assets: List<Asset>) {
         localDataSource.saveAssets(assets)
     }
 
-    override fun getAssetHistory(assetId: Long): Flow<List<AssetHistory>> =
-        localDataSource.getAssetHistoryFlow(assetId)
+    override suspend fun getAssetHistory(assetId: Long): List<AssetHistory> =
+        localDataSource.getAssetHistory(assetId)
 
     override suspend fun addAssetHistory(history: AssetHistory) {
         localDataSource.addAssetHistory(history)
     }
 
-    override fun getAllAssetHistories(): Flow<List<AssetHistory>> =
-        localDataSource.getAllAssetHistoriesFlow()
+    override suspend fun getAllAssetHistories(): List<AssetHistory> =
+        localDataSource.getAllAssetHistories()
 
-    override fun getAllTotalAssetHistory(): Flow<List<TotalAssetSnapshot>> =
-        localDataSource.getAllTotalAssetHistoryFlow()
+    override suspend fun getAllTotalAssetHistory(): List<TotalAssetSnapshot> =
+        localDataSource.getAllTotalAssetHistory()
 
     override suspend fun addTotalAssetSnapshot(snapshot: TotalAssetSnapshot) {
         localDataSource.addTotalAssetSnapshot(snapshot)

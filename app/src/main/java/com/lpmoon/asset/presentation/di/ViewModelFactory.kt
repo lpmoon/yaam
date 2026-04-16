@@ -9,8 +9,8 @@ import com.lpmoon.asset.data.local.room.AppDatabase
 import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
 import com.lpmoon.asset.data.repository.AssetRepositoryImpl
 import com.lpmoon.asset.data.repository.ExchangeRateRepositoryImpl
+import com.lpmoon.asset.data.repository.TaxSettingsRepositoryImpl
 import com.lpmoon.asset.domain.usecase.asset.AddAssetUseCase
-import com.lpmoon.asset.domain.usecase.asset.AddTotalAssetSnapshotUseCase
 import com.lpmoon.asset.domain.usecase.asset.CalculateAssetHistoryUseCase
 import com.lpmoon.asset.domain.usecase.asset.CalculateTotalAssetsUseCase
 import com.lpmoon.asset.domain.usecase.asset.ClearAllAssetsUseCase
@@ -24,7 +24,11 @@ import com.lpmoon.asset.domain.usecase.asset.GetExchangeRateUseCase
 import com.lpmoon.asset.domain.usecase.asset.RefreshExchangeRateUseCase
 import com.lpmoon.asset.domain.usecase.asset.SaveAssetsUseCase
 import com.lpmoon.asset.domain.usecase.asset.UpdateAssetUseCase
+import com.lpmoon.asset.domain.usecase.tax.LoadTaxSettingsUseCase
+import com.lpmoon.asset.domain.usecase.tax.ObserveTaxSettingsUseCase
+import com.lpmoon.asset.domain.usecase.tax.SaveTaxSettingsUseCase
 import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
+import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 import com.lpmoon.asset.sync.AssetSyncServer
 import com.lpmoon.asset.util.FileIoService
 
@@ -37,6 +41,9 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AssetListViewModel::class.java)) {
             return createAssetListViewModel() as T
+        }
+        if (modelClass.isAssignableFrom(TaxSettingsViewModel::class.java)) {
+            return createTaxSettingsViewModel() as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
@@ -69,19 +76,18 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
             exchangeRateRepository
         )
         val calculateAssetHistoryUseCase = CalculateAssetHistoryUseCase(assetRepository)
-        val addAssetUseCase = AddAssetUseCase(assetRepository)
-        val updateAssetUseCase = UpdateAssetUseCase(assetRepository)
-        val deleteAssetUseCase = DeleteAssetUseCase(assetRepository)
+        val addAssetUseCase = AddAssetUseCase(assetRepository, calculateTotalAssetsUseCase)
+        val updateAssetUseCase = UpdateAssetUseCase(assetRepository, calculateTotalAssetsUseCase)
+        val deleteAssetUseCase = DeleteAssetUseCase(assetRepository, calculateTotalAssetsUseCase)
         val getAssetHistoryUseCase = GetAssetHistoryUseCase(assetRepository)
         val refreshExchangeRateUseCase = RefreshExchangeRateUseCase(exchangeRateRepository)
         val getAllAssetsUseCase = GetAllAssetsUseCase(assetRepository)
         val getExchangeRateUseCase = GetExchangeRateUseCase(exchangeRateRepository)
         val clearAllAssetsUseCase = ClearAllAssetsUseCase(assetRepository)
-        val saveAssetsUseCase = SaveAssetsUseCase(assetRepository)
+        val saveAssetsUseCase = SaveAssetsUseCase(assetRepository, calculateTotalAssetsUseCase)
         val exportAssetsUseCase = FileExportAssetsUseCase()
         val importAssetsUseCase = FileImportAssetsUseCase()
         val generateAssetSnapshotUseCase = GenerateAssetSnapshotUseCase()
-        val addTotalAssetSnapshotUseCase = AddTotalAssetSnapshotUseCase(assetRepository)
         val fileIoService = FileIoService(application)
         val assetSyncServer = AssetSyncServer(application)
 
@@ -101,9 +107,21 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
             exportAssetsUseCase = exportAssetsUseCase,
             importAssetsUseCase = importAssetsUseCase,
             generateAssetSnapshotUseCase = generateAssetSnapshotUseCase,
-            addTotalAssetSnapshotUseCase = addTotalAssetSnapshotUseCase,
             fileIoService = fileIoService,
             assetSyncServer = assetSyncServer
+        )
+    }
+
+    private fun createTaxSettingsViewModel(): TaxSettingsViewModel {
+        val taxRepository = TaxSettingsRepositoryImpl(application)
+        val observeTaxSettingsUseCase = ObserveTaxSettingsUseCase(taxRepository)
+        val loadTaxSettingsUseCase = LoadTaxSettingsUseCase(taxRepository)
+        val saveTaxSettingsUseCase = SaveTaxSettingsUseCase(taxRepository)
+
+        return TaxSettingsViewModel(
+            observeTaxSettingsUseCase = observeTaxSettingsUseCase,
+            loadTaxSettingsUseCase = loadTaxSettingsUseCase,
+            saveTaxSettingsUseCase = saveTaxSettingsUseCase
         )
     }
 }
