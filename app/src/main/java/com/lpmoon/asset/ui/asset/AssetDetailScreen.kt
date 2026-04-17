@@ -20,13 +20,15 @@ import androidx.compose.ui.unit.dp
 import com.lpmoon.asset.domain.model.asset.Asset
 import com.lpmoon.asset.domain.model.asset.AssetHistory
 import com.lpmoon.asset.domain.model.asset.CurrencyType
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.util.CurrencyConverter
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssetDetailScreen(
     asset: Asset,
-    getValueInCny: (Asset) -> Double,
+    exchangeRate: ExchangeRate,
     getDisplayValue: (Asset) -> String,
     onBack: () -> Unit,
     onEdit: () -> Unit,
@@ -178,7 +180,7 @@ fun AssetDetailScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        val cnyValue = "${DecimalFormat("#,##0.00").format(getValueInCny(asset))}"
+                        val cnyValue = "${DecimalFormat("#,##0.00").format(CurrencyConverter.convertToCny(asset, exchangeRate))}"
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)

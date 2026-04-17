@@ -12,6 +12,6 @@ class GetExchangeRateUseCase(
 ) : UseCaseNoParam<ExchangeRate> {
 
     override suspend fun invoke(): ExchangeRate {
-        return exchangeRateRepository.getCachedExchangeRate()
+        return exchangeRateRepository.getExchangeRate()
     }
 }

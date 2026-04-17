@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import com.lpmoon.asset.domain.model.asset.Asset
 import com.lpmoon.asset.domain.model.asset.AssetHistory
 import com.lpmoon.asset.domain.model.asset.AssetType
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.util.CurrencyConverter
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -79,10 +81,10 @@ fun getAssetIcon(asset: Asset): ImageVector {
 @Composable
 fun AssetListItem(
     asset: Asset,
-    getValueInCny: (Asset) -> Double,
+    exchangeRate: ExchangeRate,
     onClick: () -> Unit
 ) {
-    val cnyValue = getValueInCny(asset)
+    val cnyValue = CurrencyConverter.convertToCny(asset, exchangeRate)
 
     Row(
         modifier = Modifier
@@ -199,7 +201,7 @@ fun HistoryItem(history: AssetHistory) {
 fun AssetSnapshotContent(
     assets: List<Asset>,
     totalAssets: Double,
-    getAssetValueInCny: (Asset) -> Double,
+    exchangeRate: ExchangeRate,
     modifier: Modifier = Modifier,
     showTimestamp: Boolean = false,
     onAssetClick: ((Asset) -> Unit)? = null,
@@ -264,13 +266,13 @@ fun AssetSnapshotContent(
                 orderedAssetTypes.forEach { assetType ->
                     val assetsInGroup = groupedAssets[assetType]
                     if (!assetsInGroup.isNullOrEmpty()) {
-                        val totalAmount = assetsInGroup.sumOf { getAssetValueInCny(it) }
+                        val totalAmount = assetsInGroup.sumOf { CurrencyConverter.convertToCny(it, exchangeRate) }
                         AssetTypeHeader(assetType = assetType, totalAmount = totalAmount)
                         assetsInGroup.forEach { asset ->
                             key(asset.id) {
                                 AssetListItem(
                                     asset = asset,
-                                    getValueInCny = getAssetValueInCny,
+                                    exchangeRate = exchangeRate,
                                     onClick = { onAssetClick?.invoke(asset) }
                                 )
                             }

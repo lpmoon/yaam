@@ -35,7 +35,7 @@ class CalculateTotalAssetsUseCase(
     suspend fun calculateNow(): Double {
         val assets = assetRepository.getAllAssets().first()
         val exchangeRate = try {
-            exchangeRateRepository.getCachedExchangeRate()
+            exchangeRateRepository.getExchangeRate()
         } catch (e: Exception) {
             ExchangeRate.getDefaultValues()
         }
@@ -56,7 +56,7 @@ class CalculateTotalAssetsUseCase(
             var lastExchangeRate: ExchangeRate? = null
             while (true) {
                 try {
-                    val exchangeRate = exchangeRateRepository.getCachedExchangeRate()
+                    val exchangeRate = exchangeRateRepository.getExchangeRate()
                     if (exchangeRate != lastExchangeRate) {
                         emit(exchangeRate)
                         lastExchangeRate = exchangeRate

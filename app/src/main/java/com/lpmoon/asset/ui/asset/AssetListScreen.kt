@@ -152,7 +152,7 @@ fun AssetListScreen(
     if (selectedAsset != null) {
         AssetDetailScreen(
             asset = selectedAsset!!,
-            getValueInCny = getAssetValueInCny,
+            exchangeRate = exchangeRate,
             getDisplayValue = getAssetDisplayValue,
             onBack = { selectedAsset = null },
             onEdit = { editingAsset = selectedAsset!! },
@@ -285,7 +285,7 @@ fun AssetListScreen(
                 AssetSnapshotContent(
                     assets = assets,
                     totalAssets = totalAssets,
-                    getAssetValueInCny = getAssetValueInCny,
+                    exchangeRate = exchangeRate,
                     showTimestamp = false,
                     onAssetClick = { asset -> selectedAsset = asset },
                     cardActions = {

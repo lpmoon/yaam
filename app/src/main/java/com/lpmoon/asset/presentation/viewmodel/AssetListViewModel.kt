@@ -68,7 +68,8 @@ class AssetListViewModel(
     private fun loadExchangeRate() {
         viewModelScope.launch {
             try {
-                _exchangeRate.value = getExchangeRateUseCase()
+                val rate = getExchangeRateUseCase()
+                _exchangeRate.value = rate
             } catch (e: Exception) {
                 _exchangeRate.value = ExchangeRate.getDefaultValues()
             }
