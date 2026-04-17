@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
                         AssetRankingScreen(
                             assets = newAssetViewModel.assets.collectAsState().value,
                             totalAssets = newAssetViewModel.totalAssets.collectAsState().value,
+                            exchangeRate = newAssetViewModel.exchangeRate.collectAsState().value,
                             getAssetValueInCny = newAssetViewModel::getAssetValueInCny,
                             onBack = { currentScreen = Screen.AssetList },
                             onNavigateToConfiguration = { currentScreen = Screen.Configuration }
