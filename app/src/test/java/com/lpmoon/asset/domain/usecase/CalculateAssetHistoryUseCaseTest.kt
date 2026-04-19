@@ -1,13 +1,12 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.TimeDimension
-import com.lpmoon.asset.domain.model.TotalAssetSnapshot
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.TimeDimension
+import com.lpmoon.asset.domain.model.asset.TotalAssetSnapshot
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.CalculateAssetHistoryUseCase
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

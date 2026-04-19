@@ -1,7 +1,9 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.OperationType
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.GetAssetHistoryUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
@@ -27,8 +29,8 @@ class GetAssetHistoryUseCaseTest {
         // Given
         val assetId = 1L
         val histories = listOf(
-            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = "CREATE"),
-            AssetHistory(id = 200L, assetId = assetId, oldValue = "1000", newValue = "1500", operationType = "UPDATE")
+            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = OperationType.CREATE),
+            AssetHistory(id = 200L, assetId = assetId, oldValue = "1000", newValue = "1500", operationType = OperationType.UPDATE)
         )
         every { assetRepository.getAssetHistory(assetId) } returns flowOf(histories)
 
@@ -62,11 +64,11 @@ class GetAssetHistoryUseCaseTest {
         // Given
         val assetId = 1L
         val firstHistories = listOf(
-            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = "CREATE")
+            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = OperationType.CREATE)
         )
         val secondHistories = listOf(
-            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = "CREATE"),
-            AssetHistory(id = 200L, assetId = assetId, oldValue = "1000", newValue = "1500", operationType = "UPDATE")
+            AssetHistory(id = 100L, assetId = assetId, oldValue = "", newValue = "1000", operationType = OperationType.CREATE),
+            AssetHistory(id = 200L, assetId = assetId, oldValue = "1000", newValue = "1500", operationType = OperationType.UPDATE)
         )
 
         val flow = kotlinx.coroutines.flow.flow {
@@ -90,9 +92,9 @@ class GetAssetHistoryUseCaseTest {
         // Given
         val assetId = 2L
         val histories = listOf(
-            AssetHistory(id = 100L, assetId = 1L, oldValue = "", newValue = "500", operationType = "CREATE"),
-            AssetHistory(id = 200L, assetId = 2L, oldValue = "", newValue = "1000", operationType = "CREATE"),
-            AssetHistory(id = 300L, assetId = 2L, oldValue = "1000", newValue = "1200", operationType = "UPDATE")
+            AssetHistory(id = 100L, assetId = 1L, oldValue = "", newValue = "500", operationType = OperationType.CREATE),
+            AssetHistory(id = 200L, assetId = 2L, oldValue = "", newValue = "1000", operationType = OperationType.CREATE),
+            AssetHistory(id = 300L, assetId = 2L, oldValue = "1000", newValue = "1200", operationType = OperationType.UPDATE)
         )
         every { assetRepository.getAssetHistory(assetId) } returns flowOf(histories.filter { it.assetId == assetId })
 

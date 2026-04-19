@@ -2,9 +2,10 @@ package com.lpmoon.asset.sync
 
 import android.content.Context
 import android.util.Base64
+import android.util.Log
 import com.google.gson.Gson
-import com.lpmoon.asset.data.asset.Asset
-import com.lpmoon.asset.domain.model.ExportAsset
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.ExportAsset
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -35,7 +36,9 @@ class AssetSyncServer(private val context: Context) {
     companion object {
         private const val TAG = "AssetSyncServer"
         private const val AES_ALGORITHM = "AES"
-        private const val AES_TRANSFORMATION = "AES/ECB/PKCS5Padding"
+        private const val AES_TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val GCM_IV_LENGTH = 12 // GCM 推荐的 IV 长度
+        private const val GCM_TAG_LENGTH = 16 // GCM 认证标签长度
         private const val SESSION_ID_LENGTH = 16
         private const val KEY_LENGTH = 16 // AES-128
     }
@@ -196,12 +199,21 @@ class AssetSyncServer(private val context: Context) {
 
     /**
      * 加密数据
+     * 格式：IV (12 bytes) + 密文 + GCM tag (16 bytes)
      */
     private fun encryptData(data: String): ByteArray {
+        val iv = ByteArray(GCM_IV_LENGTH)
+        SecureRandom().nextBytes(iv)
+
         val cipher = Cipher.getInstance(AES_TRANSFORMATION)
         val keySpec = SecretKeySpec(encryptionKey, AES_ALGORITHM)
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec)
-        return cipher.doFinal(data.toByteArray(Charsets.UTF_8))
+        val spec = javax.crypto.spec.GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, spec)
+
+        val ciphertext = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
+
+        // 将 IV 和密文拼接
+        return iv + ciphertext
     }
 
     /**
@@ -215,15 +227,29 @@ class AssetSyncServer(private val context: Context) {
 
     /**
      * 解密数据（用于客户端）
+     * 格式：IV (12 bytes) + 密文 + GCM tag (16 bytes)
      */
     fun decryptData(encryptedData: ByteArray, key: ByteArray): String? {
         return try {
+            if (encryptedData.size < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
+                Log.e(TAG, "Encrypted data too short")
+                return null
+            }
+
+            // 提取 IV
+            val iv = encryptedData.copyOfRange(0, GCM_IV_LENGTH)
+            // 提取密文和 tag
+            val ciphertextWithTag = encryptedData.copyOfRange(GCM_IV_LENGTH, encryptedData.size)
+
             val cipher = Cipher.getInstance(AES_TRANSFORMATION)
             val keySpec = SecretKeySpec(key, AES_ALGORITHM)
-            cipher.init(Cipher.DECRYPT_MODE, keySpec)
-            val decrypted = cipher.doFinal(encryptedData)
+            val spec = javax.crypto.spec.GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, spec)
+
+            val decrypted = cipher.doFinal(ciphertextWithTag)
             String(decrypted, Charsets.UTF_8)
         } catch (e: Exception) {
+            Log.e(TAG, "Decryption failed", e)
             null
         }
     }

@@ -19,8 +19,7 @@ import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import com.lpmoon.asset.domain.model.ExportAsset
-import com.lpmoon.asset.domain.usecase.QRImportAssetsUseCase
+import com.lpmoon.asset.domain.usecase.asset.QRImportAssetsUseCase
 import com.lpmoon.asset.sync.AssetSyncClient
 import kotlinx.coroutines.launch
 

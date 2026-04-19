@@ -2,8 +2,8 @@ package com.lpmoon.asset.data.repository
 
 import com.lpmoon.asset.data.local.ExchangeRateLocalDataSource
 import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
-import com.lpmoon.asset.domain.model.ExchangeRate
-import com.lpmoon.asset.domain.repository.ExchangeRateRepository
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.repository.asset.ExchangeRateRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -13,11 +13,10 @@ import kotlinx.coroutines.withContext
 class ExchangeRateRepositoryImpl(
     private val localDataSource: ExchangeRateLocalDataSource,
     private val apiDataSource: ExchangeRateApiDataSource
-
 ) : ExchangeRateRepository {
 
     override suspend fun getExchangeRate(): ExchangeRate = withContext(Dispatchers.IO) {
-        val cached = getCachedExchangeRate()
+        val cached = localDataSource.getCachedExchangeRate()
 
         // 如果缓存未过期，直接返回
         if (!cached.isExpired()) {
@@ -59,7 +58,8 @@ class ExchangeRateRepositoryImpl(
         }
     }
 
-    override suspend fun getCachedExchangeRate(): ExchangeRate = withContext(Dispatchers.IO) {
-        localDataSource.getCachedExchangeRate()
-    }
+    override suspend fun getCachedExchangeRate(): ExchangeRate =
+        withContext(Dispatchers.IO) {
+            localDataSource.getCachedExchangeRate()
+        }
 }

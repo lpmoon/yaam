@@ -1,9 +1,9 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.OperationType
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.OperationType
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.AddAssetUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -54,7 +54,7 @@ class AddAssetUseCaseTest {
                 assertEquals("Cash", asset.type)
             })
             assetRepository.addAssetHistory(withArg { history ->
-                assertEquals(OperationType.CREATE.name, history.operationType)
+                assertEquals(OperationType.CREATE, history.operationType)
                 assertEquals("", history.oldValue)
                 assertEquals("1000", history.newValue)
             })
@@ -119,7 +119,7 @@ class AddAssetUseCaseTest {
         // Then
         coVerify {
             assetRepository.addAssetHistory(withArg { history ->
-                assertEquals(OperationType.CREATE.name, history.operationType)
+                assertEquals(OperationType.CREATE, history.operationType)
                 assert(history.id > 0) // timestamp should be positive
             })
         }

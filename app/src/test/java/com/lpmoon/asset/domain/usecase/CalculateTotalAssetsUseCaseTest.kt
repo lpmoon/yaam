@@ -1,18 +1,17 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.ExchangeRate
-import com.lpmoon.asset.domain.repository.AssetRepository
-import com.lpmoon.asset.domain.repository.ExchangeRateRepository
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.repository.asset.ExchangeRateRepository
+import com.lpmoon.asset.domain.usecase.asset.CalculateTotalAssetsUseCase
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -26,7 +25,8 @@ class CalculateTotalAssetsUseCaseTest {
     fun setUp() {
         assetRepository = mockk()
         exchangeRateRepository = mockk()
-        calculateTotalAssetsUseCase = CalculateTotalAssetsUseCase(assetRepository, exchangeRateRepository)
+        calculateTotalAssetsUseCase =
+            CalculateTotalAssetsUseCase(assetRepository, exchangeRateRepository)
     }
 
     @Test

@@ -5,7 +5,7 @@ import android.util.Base64
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.lpmoon.asset.domain.model.ExportAsset
+import com.lpmoon.asset.domain.model.asset.ExportAsset
 import kotlinx.coroutines.*
 import okhttp3.*
 import java.io.IOException
@@ -59,9 +59,9 @@ class AssetSyncClient(private val context: Context) {
                 val isAssetData = try {
                     val type = com.google.gson.reflect.TypeToken.getParameterized(
                         List::class.java,
-                        com.lpmoon.asset.domain.model.ExportAsset::class.java
+                        ExportAsset::class.java
                     ).type
-                    val assets = gson.fromJson<List<com.lpmoon.asset.domain.model.ExportAsset>>(qrContent, type)
+                    val assets = gson.fromJson<List<ExportAsset>>(qrContent, type)
                     assets != null && assets.isNotEmpty()
                 } catch (e: Exception) {
                     false

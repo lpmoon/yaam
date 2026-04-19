@@ -1,9 +1,9 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.model.AssetHistory
-import com.lpmoon.asset.domain.model.OperationType
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.OperationType
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.UpdateAssetUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -65,7 +65,7 @@ class UpdateAssetUseCaseTest {
                 assertEquals(1L, history.assetId)
                 assertEquals("1000", history.oldValue)
                 assertEquals("1500", history.newValue)
-                assertEquals(OperationType.UPDATE.name, history.operationType)
+                assertEquals(OperationType.UPDATE, history.operationType)
             })
         }
     }
@@ -166,7 +166,7 @@ class UpdateAssetUseCaseTest {
         coVerify {
             assetRepository.addAssetHistory(withArg { history ->
                 assert(history.id > 0) // timestamp
-                assertEquals(OperationType.UPDATE.name, history.operationType)
+                assertEquals(OperationType.UPDATE, history.operationType)
             })
         }
     }

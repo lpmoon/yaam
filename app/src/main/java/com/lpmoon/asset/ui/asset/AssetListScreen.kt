@@ -65,10 +65,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.lpmoon.asset.data.asset.Asset
-import com.lpmoon.asset.data.asset.AssetHistory
-import com.lpmoon.asset.data.asset.ExchangeRate
-import com.lpmoon.asset.data.asset.TimeDimension
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.AssetHistory
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.domain.model.asset.TimeDimension
 import com.lpmoon.asset.sync.AssetSyncClient
 import java.text.DecimalFormat
 
@@ -152,7 +152,7 @@ fun AssetListScreen(
     if (selectedAsset != null) {
         AssetDetailScreen(
             asset = selectedAsset!!,
-            getValueInCny = getAssetValueInCny,
+            exchangeRate = exchangeRate,
             getDisplayValue = getAssetDisplayValue,
             onBack = { selectedAsset = null },
             onEdit = { editingAsset = selectedAsset!! },
@@ -285,7 +285,7 @@ fun AssetListScreen(
                 AssetSnapshotContent(
                     assets = assets,
                     totalAssets = totalAssets,
-                    getAssetValueInCny = getAssetValueInCny,
+                    exchangeRate = exchangeRate,
                     showTimestamp = false,
                     onAssetClick = { asset -> selectedAsset = asset },
                     cardActions = {

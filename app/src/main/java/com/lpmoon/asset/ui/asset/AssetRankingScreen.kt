@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lpmoon.asset.data.asset.Asset
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.model.asset.ExchangeRate
+import com.lpmoon.asset.util.CurrencyConverter
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,15 +27,18 @@ import java.text.DecimalFormat
 fun AssetRankingScreen(
     assets: List<Asset>,
     totalAssets: Double,
+    exchangeRate: ExchangeRate,
     getAssetValueInCny: (Asset) -> Double,
     onBack: () -> Unit,
     onNavigateToConfiguration: () -> Unit = {}
 ) {
     // 计算每个资产的价值和百分比，并按价值从高到低排序
-    val rankedAssets = remember(assets, totalAssets) {
+    // 注意：这里直接使用传入的 exchangeRate 参数来计算，确保使用最新汇率
+    val rankedAssets = remember(assets, totalAssets, exchangeRate) {
         if (totalAssets > 0) {
             assets.map { asset ->
-                val value = getAssetValueInCny(asset)
+                // 使用传入的最新 exchangeRate 计算，而不是依赖 getAssetValueInCny 函数闭包
+                val value = CurrencyConverter.convertToCny(asset, exchangeRate)
                 val percentage = value / totalAssets
                 RankedAsset(asset, value, percentage, 0) // 临时排名0，将在排序后更新
             }.sortedByDescending { it.value }

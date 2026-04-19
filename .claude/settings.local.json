@@ -38,7 +38,9 @@
       "Bash(./gradlew :app:assembleDebugAndroidTest)",
       "Bash(./gradlew :app:clean)",
       "Bash(./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
-      "Bash(./gradlew :app:compileDebugAndroidTestKotlin :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)"
+      "Bash(./gradlew :app:compileDebugAndroidTestKotlin :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
+      "Bash(./gradlew compileDebugKotlin --warning-mode all)",
+      "Bash(./gradlew testDebugUnitTest)"
     ]
   }
 }

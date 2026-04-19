@@ -1,7 +1,8 @@
 package com.lpmoon.asset.domain.usecase
 
-import com.lpmoon.asset.domain.model.Asset
-import com.lpmoon.asset.domain.repository.AssetRepository
+import com.lpmoon.asset.domain.model.asset.Asset
+import com.lpmoon.asset.domain.repository.asset.AssetRepository
+import com.lpmoon.asset.domain.usecase.asset.SaveAssetsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
