@@ -9,6 +9,7 @@ import com.lpmoon.asset.data.local.room.AppDatabase
 import com.lpmoon.asset.data.remote.ExchangeRateApiDataSource
 import com.lpmoon.asset.data.repository.AssetRepositoryImpl
 import com.lpmoon.asset.data.repository.ExchangeRateRepositoryImpl
+import com.lpmoon.asset.data.repository.IncomeTaxHistoryRepositoryImpl
 import com.lpmoon.asset.data.repository.TaxSettingsRepositoryImpl
 import com.lpmoon.asset.domain.usecase.asset.AddAssetUseCase
 import com.lpmoon.asset.domain.usecase.asset.CalculateAssetHistoryUseCase
@@ -24,10 +25,15 @@ import com.lpmoon.asset.domain.usecase.asset.GetExchangeRateUseCase
 import com.lpmoon.asset.domain.usecase.asset.RefreshExchangeRateUseCase
 import com.lpmoon.asset.domain.usecase.asset.SaveAssetsUseCase
 import com.lpmoon.asset.domain.usecase.asset.UpdateAssetUseCase
+import com.lpmoon.asset.domain.usecase.tax.ClearIncomeTaxHistoriesUseCase
+import com.lpmoon.asset.domain.usecase.tax.DeleteIncomeTaxHistoryUseCase
+import com.lpmoon.asset.domain.usecase.tax.GetIncomeTaxHistoriesUseCase
 import com.lpmoon.asset.domain.usecase.tax.LoadTaxSettingsUseCase
 import com.lpmoon.asset.domain.usecase.tax.ObserveTaxSettingsUseCase
+import com.lpmoon.asset.domain.usecase.tax.SaveIncomeTaxHistoryUseCase
 import com.lpmoon.asset.domain.usecase.tax.SaveTaxSettingsUseCase
 import com.lpmoon.asset.presentation.viewmodel.AssetListViewModel
+import com.lpmoon.asset.presentation.viewmodel.IncomeTaxCalculatorViewModel
 import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 import com.lpmoon.asset.sync.AssetSyncServer
 import com.lpmoon.asset.util.FileIoService
@@ -44,6 +50,9 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
         }
         if (modelClass.isAssignableFrom(TaxSettingsViewModel::class.java)) {
             return createTaxSettingsViewModel() as T
+        }
+        if (modelClass.isAssignableFrom(IncomeTaxCalculatorViewModel::class.java)) {
+            return createIncomeTaxCalculatorViewModel() as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
@@ -122,6 +131,21 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
             observeTaxSettingsUseCase = observeTaxSettingsUseCase,
             loadTaxSettingsUseCase = loadTaxSettingsUseCase,
             saveTaxSettingsUseCase = saveTaxSettingsUseCase
+        )
+    }
+
+    private fun createIncomeTaxCalculatorViewModel(): IncomeTaxCalculatorViewModel {
+        val historyRepository = IncomeTaxHistoryRepositoryImpl(application)
+        val getHistoriesUseCase = GetIncomeTaxHistoriesUseCase(historyRepository)
+        val saveHistoryUseCase = SaveIncomeTaxHistoryUseCase(historyRepository)
+        val deleteHistoryUseCase = DeleteIncomeTaxHistoryUseCase(historyRepository)
+        val clearHistoriesUseCase = ClearIncomeTaxHistoriesUseCase(historyRepository)
+
+        return IncomeTaxCalculatorViewModel(
+            getHistoriesUseCase = getHistoriesUseCase,
+            saveHistoryUseCase = saveHistoryUseCase,
+            deleteHistoryUseCase = deleteHistoryUseCase,
+            clearHistoriesUseCase = clearHistoriesUseCase
         )
     }
 }

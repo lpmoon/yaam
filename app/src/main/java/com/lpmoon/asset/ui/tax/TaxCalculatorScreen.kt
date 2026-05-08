@@ -1,6 +1,7 @@
 package com.lpmoon.asset.ui.tax
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,9 +16,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lpmoon.asset.domain.model.tax.BonusTaxResult
+import com.lpmoon.asset.domain.model.tax.IncomeTaxHistory
 import com.lpmoon.asset.domain.model.tax.IncomeTaxResult
 import com.lpmoon.asset.domain.usecase.tax.CalculateBonusTaxUseCase
 import com.lpmoon.asset.domain.usecase.tax.CalculateIncomeTaxUseCase
+import com.lpmoon.asset.presentation.di.ViewModelFactory
+import com.lpmoon.asset.presentation.viewmodel.IncomeTaxCalculatorViewModel
 import com.lpmoon.asset.presentation.viewmodel.TaxSettingsViewModel
 import java.text.DecimalFormat
 
@@ -25,7 +29,8 @@ import java.text.DecimalFormat
 @Composable
 fun TaxCalculatorScreen(
     onBack: () -> Unit,
-    onNavigateToConfiguration: () -> Unit = {}
+    onNavigateToConfiguration: () -> Unit = {},
+    viewModelFactory: ViewModelFactory
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: 年终奖计算, 1: 普通收入计算
 
@@ -81,7 +86,7 @@ fun TaxCalculatorScreen(
                 .padding(paddingValues)
         ) {
             // 选项卡选择器
-            TabRow(
+            PrimaryTabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,
@@ -123,7 +128,7 @@ fun TaxCalculatorScreen(
             ) {
                 when (selectedTab) {
                     0 -> TaxRateCalculatorContentWrapper()
-                    1 -> IncomeTaxCalculatorContentWrapper()
+                    1 -> IncomeTaxCalculatorContentWrapper(viewModelFactory)
                 }
             }
         }
@@ -171,29 +176,39 @@ private fun TaxRateCalculatorContentWrapper() {
 }
 
 @Composable
-private fun IncomeTaxCalculatorContentWrapper() {
-    val viewModel: TaxSettingsViewModel = viewModel()
-    val taxSettings by viewModel.taxSettings.collectAsState()
+private fun IncomeTaxCalculatorContentWrapper(viewModelFactory: ViewModelFactory) {
+    val taxSettingsViewModel: TaxSettingsViewModel = viewModel(factory = viewModelFactory)
+    val taxSettings by taxSettingsViewModel.taxSettings.collectAsState()
+
+    val incomeTaxViewModel: IncomeTaxCalculatorViewModel = viewModel(factory = viewModelFactory)
+    val histories by incomeTaxViewModel.histories.collectAsState()
+
     val calculateIncomeTaxUseCase = remember { CalculateIncomeTaxUseCase() }
 
     var monthlySalary by remember { mutableStateOf("") }
     var annualSalary by remember { mutableStateOf("") }
     var calculationMode by remember { mutableStateOf(0) } // 0: 月薪, 1: 年薪
-    var socialSecurityRate by remember { mutableStateOf(viewModel.formatSocialSecurityPercent()) } // 养老保险个人比例
-    var housingFundRate by remember { mutableStateOf(viewModel.formatHousingFundPercent()) } // 公积金个人比例
-    var medicalInsuranceRate by remember { mutableStateOf(viewModel.formatMedicalInsurancePercent()) } // 医疗保险个人比例
-    var unemploymentInsuranceRate by remember { mutableStateOf(viewModel.formatUnemploymentInsurancePercent()) } // 失业保险个人比例
-    var specialDeduction by remember { mutableStateOf(viewModel.formatSpecialDeduction()) } // 专项附加扣除
+    var socialSecurityRate by remember { mutableStateOf(taxSettingsViewModel.formatSocialSecurityPercent()) }
+    var housingFundRate by remember { mutableStateOf(taxSettingsViewModel.formatHousingFundPercent()) }
+    var medicalInsuranceRate by remember { mutableStateOf(taxSettingsViewModel.formatMedicalInsurancePercent()) }
+    var unemploymentInsuranceRate by remember { mutableStateOf(taxSettingsViewModel.formatUnemploymentInsurancePercent()) }
+    var specialDeduction by remember { mutableStateOf(taxSettingsViewModel.formatSpecialDeduction()) }
     var showResult by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<IncomeTaxResult?>(null) }
+    var hasSavedCurrentResult by remember { mutableStateOf(false) }
+
+    // 当输入变化时重置保存标志
+    LaunchedEffect(monthlySalary, annualSalary, calculationMode) {
+        hasSavedCurrentResult = false
+    }
 
     // 当税率设置变化时，更新本地状态
     LaunchedEffect(taxSettings) {
-        socialSecurityRate = viewModel.formatSocialSecurityPercent()
-        housingFundRate = viewModel.formatHousingFundPercent()
-        medicalInsuranceRate = viewModel.formatMedicalInsurancePercent()
-        unemploymentInsuranceRate = viewModel.formatUnemploymentInsurancePercent()
-        specialDeduction = viewModel.formatSpecialDeduction()
+        socialSecurityRate = taxSettingsViewModel.formatSocialSecurityPercent()
+        housingFundRate = taxSettingsViewModel.formatHousingFundPercent()
+        medicalInsuranceRate = taxSettingsViewModel.formatMedicalInsurancePercent()
+        unemploymentInsuranceRate = taxSettingsViewModel.formatUnemploymentInsurancePercent()
+        specialDeduction = taxSettingsViewModel.formatSpecialDeduction()
     }
 
     val monthlySalaryValue = monthlySalary.toDoubleOrNull() ?: 0.0
@@ -211,9 +226,11 @@ private fun IncomeTaxCalculatorContentWrapper() {
         else -> 0.0
     }
 
-    LaunchedEffect(baseMonthlySalary, socialSecurityRateValue, housingFundRateValue, medicalInsuranceRateValue, unemploymentInsuranceRateValue, specialDeductionValue) {
+    // 计算并自动保存历史
+    LaunchedEffect(baseMonthlySalary, socialSecurityRateValue, housingFundRateValue,
+                   medicalInsuranceRateValue, unemploymentInsuranceRateValue, specialDeductionValue, showResult) {
         if (baseMonthlySalary > 0) {
-            result = calculateIncomeTaxUseCase(
+            val newResult = calculateIncomeTaxUseCase(
                 CalculateIncomeTaxUseCase.Params(
                     monthlySalary = baseMonthlySalary,
                     socialSecurityRate = socialSecurityRateValue / 100.0,
@@ -223,6 +240,23 @@ private fun IncomeTaxCalculatorContentWrapper() {
                     specialDeduction = specialDeductionValue
                 )
             )
+            result = newResult
+
+            // 当显示结果且有有效结果时，自动保存历史
+            if (showResult && newResult.taxableIncome >= 0 && !hasSavedCurrentResult) {
+                val inputSalary = if (calculationMode == 0) monthlySalaryValue else annualSalaryValue
+                incomeTaxViewModel.saveHistory(
+                    calculationMode = calculationMode,
+                    inputSalary = inputSalary,
+                    socialSecurityRate = socialSecurityRateValue / 100.0,
+                    housingFundRate = housingFundRateValue / 100.0,
+                    medicalInsuranceRate = medicalInsuranceRateValue / 100.0,
+                    unemploymentInsuranceRate = unemploymentInsuranceRateValue / 100.0,
+                    specialDeduction = specialDeductionValue,
+                    result = newResult
+                )
+                hasSavedCurrentResult = true
+            }
         }
     }
 
@@ -245,15 +279,38 @@ private fun IncomeTaxCalculatorContentWrapper() {
         specialDeductionValue = specialDeductionValue,
         baseMonthlySalary = baseMonthlySalary,
         result = result,
+        histories = histories,
         onMonthlySalaryChange = { monthlySalary = it },
         onAnnualSalaryChange = { annualSalary = it },
-        onCalculationModeChange = { calculationMode = it },
+        onCalculationModeChange = {
+            calculationMode = it
+            hasSavedCurrentResult = false
+        },
         onSocialSecurityRateChange = { socialSecurityRate = it },
         onHousingFundRateChange = { housingFundRate = it },
         onMedicalInsuranceRateChange = { medicalInsuranceRate = it },
         onUnemploymentInsuranceRateChange = { unemploymentInsuranceRate = it },
         onSpecialDeductionChange = { specialDeduction = it },
         onShowResultChange = { showResult = it },
+        onDeleteHistory = { historyId -> incomeTaxViewModel.deleteHistory(historyId) },
+        onClearAllHistories = { incomeTaxViewModel.clearAllHistories() },
+        onFillHistory = { history ->
+            calculationMode = history.calculationMode
+            if (history.calculationMode == 0) {
+                monthlySalary = if (history.inputSalary > 0) history.inputSalary.toString() else ""
+                annualSalary = ""
+            } else {
+                annualSalary = if (history.inputSalary > 0) history.inputSalary.toString() else ""
+                monthlySalary = ""
+            }
+            socialSecurityRate = (history.socialSecurityRate * 100).toString()
+            housingFundRate = (history.housingFundRate * 100).toString()
+            medicalInsuranceRate = (history.medicalInsuranceRate * 100).toString()
+            unemploymentInsuranceRate = (history.unemploymentInsuranceRate * 100).toString()
+            specialDeduction = if (history.specialDeduction > 0) history.specialDeduction.toString() else ""
+            showResult = false
+            hasSavedCurrentResult = false
+        },
         modifier = Modifier.fillMaxSize()
     )
 }
@@ -441,7 +498,7 @@ private fun TaxRateCalculatorContent(
                         )
                     }
 
-                    androidx.compose.material3.Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     Text(
                         text = "税费计算",
@@ -478,7 +535,7 @@ private fun TaxRateCalculatorContent(
                         valueFontWeight = FontWeight.Bold
                     )
 
-                    androidx.compose.material3.Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     ResultItem(
                         label = "税后收入",
@@ -519,6 +576,7 @@ private fun IncomeTaxCalculatorContent(
     specialDeductionValue: Double,
     baseMonthlySalary: Double,
     result: IncomeTaxResult?,
+    histories: List<IncomeTaxHistory>,
     onMonthlySalaryChange: (String) -> Unit,
     onAnnualSalaryChange: (String) -> Unit,
     onCalculationModeChange: (Int) -> Unit,
@@ -528,6 +586,9 @@ private fun IncomeTaxCalculatorContent(
     onUnemploymentInsuranceRateChange: (String) -> Unit,
     onSpecialDeductionChange: (String) -> Unit,
     onShowResultChange: (Boolean) -> Unit,
+    onDeleteHistory: (Long) -> Unit,
+    onClearAllHistories: () -> Unit,
+    onFillHistory: (IncomeTaxHistory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -793,7 +854,7 @@ private fun IncomeTaxCalculatorContent(
                         )
                     }
 
-                    androidx.compose.material3.Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     Text(
                         text = "五险一金扣除",
@@ -835,7 +896,7 @@ private fun IncomeTaxCalculatorContent(
                         valueFontWeight = FontWeight.Normal
                     )
 
-                    androidx.compose.material3.Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     Text(
                         text = "个人所得税计算",
@@ -867,7 +928,7 @@ private fun IncomeTaxCalculatorContent(
                         valueFontWeight = FontWeight.Bold
                     )
 
-                    androidx.compose.material3.Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     ResultItem(
                         label = "税后月收入",
@@ -890,6 +951,44 @@ private fun IncomeTaxCalculatorContent(
                         value = "${DecimalFormat("#,##0.00%").format(result.actualTaxRate)}",
                         valueColor = MaterialTheme.colorScheme.error,
                         valueFontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        // 历史记录区域
+        if (histories.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "计算历史",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(
+                    onClick = onClearAllHistories,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("清除全部")
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                histories.forEach { history ->
+                    IncomeTaxHistoryCard(
+                        history = history,
+                        onDelete = { onDeleteHistory(history.id) },
+                        onFill = { onFillHistory(history) }
                     )
                 }
             }
@@ -919,5 +1018,128 @@ private fun ResultItem(
             color = valueColor,
             fontWeight = valueFontWeight
         )
+    }
+}
+
+@Composable
+private fun IncomeTaxHistoryCard(
+    history: IncomeTaxHistory,
+    onDelete: () -> Unit,
+    onFill: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 头部：薪资和时间
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = history.getSalaryDisplay(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = history.getFormattedTime(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "删除记录",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // 结果摘要
+            ResultItem(
+                label = "税后月收入",
+                value = "¥${DecimalFormat("#,##0.00").format(history.result.afterTaxMonthly)}",
+                valueColor = MaterialTheme.colorScheme.primary,
+                valueFontWeight = FontWeight.Bold
+            )
+            ResultItem(
+                label = "应缴个税",
+                value = "¥${DecimalFormat("#,##0.00").format(history.result.incomeTax)}",
+                valueColor = MaterialTheme.colorScheme.error,
+                valueFontWeight = FontWeight.Bold
+            )
+            ResultItem(
+                label = "实际税率",
+                value = "${DecimalFormat("#,##0.00%").format(history.result.actualTaxRate)}",
+                valueColor = MaterialTheme.colorScheme.error,
+                valueFontWeight = FontWeight.Bold
+            )
+            ResultItem(
+                label = "专项附加扣除",
+                value = "¥${DecimalFormat("#,##0.00").format(history.specialDeduction)}"
+            )
+
+            // 税率摘要
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text(
+                    text = "养老 ${(history.socialSecurityRate * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "公积金 ${(history.housingFundRate * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "医疗 ${(history.medicalInsuranceRate * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "失业 ${(history.unemploymentInsuranceRate * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 回填按钮
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = onFill,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Text("回填此记录", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
     }
 }
