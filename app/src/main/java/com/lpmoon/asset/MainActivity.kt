@@ -95,7 +95,8 @@ class MainActivity : AppCompatActivity() {
                     is Screen.TaxCalculator -> {
                         TaxCalculatorScreen(
                             onBack = { currentScreen = Screen.AssetList },
-                            onNavigateToConfiguration = { currentScreen = Screen.Configuration }
+                            onNavigateToConfiguration = { currentScreen = Screen.Configuration },
+                            viewModelFactory = viewModelFactory
                         )
                     }
                     is Screen.Ranking -> {

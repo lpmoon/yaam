@@ -40,7 +40,13 @@
       "Bash(./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
       "Bash(./gradlew :app:compileDebugAndroidTestKotlin :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.lpmoon.asset.domain.usecase.QRImportAssetsUseCaseTest)",
       "Bash(./gradlew compileDebugKotlin --warning-mode all)",
-      "Bash(./gradlew testDebugUnitTest)"
+      "Bash(./gradlew testDebugUnitTest)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(powershell -Command \"\\(Get-Content 'app/src/main/java/com/lpmoon/asset/ui/tax/TaxCalculatorScreen.kt'\\) -replace 'LazyColumn\\(', 'Column\\(' -replace 'contentPadding = PaddingValues\\(vertical = 8.dp\\)', '' -replace 'items\\(', 'histories.forEach\\(' -replace 'key = { it.id }', '' -replace '\\) { history ->', '\\) { history ->' | Set-Content 'app/src/main/java/com/lpmoon/asset/ui/tax/TaxCalculatorScreen.kt' -Encoding UTF8\")",
+      "Bash(sed 's/\\) { history ->/\\) { history ->/')",
+      "Read(//tmp/**)",
+      "Bash(./gradlew installDebug)",
+      "Bash(./gradlew clean *)"
     ]
   }
 }
